@@ -10,18 +10,36 @@ class Book extends Model
     protected $fillable = [
         'title',
         'isbn',
-        'category_id',
-        'author_id',
-        'description',    // أضف أي حقول أخرى تستخدمها
+        'description',
         'total_copies'
     ];
     use HasFactory;
-    public function category()
+    public function categories()
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsToMany(Category::class);
     }
-    public function author()
+    public function orders()
     {
-        return $this->belongsTo(Author::class);
+        return $this->hasMany(OrderItem::class);
+    }
+    public function authors()
+    {
+        return $this->belongsToMany(Author::class);
+    }
+    public function ratings()
+    {
+        return $this->hasMany(Rating::class);
+    }
+    public function favorites()
+    {
+        return $this->hasMany(Favorite::class);
+    }
+    public function myBooks()
+    {
+        return $this->hasMany(MyBook::class);
+    }
+    public function readingProgresses()
+    {
+        return $this->hasMany(ReadingProgress::class);
     }
 }
