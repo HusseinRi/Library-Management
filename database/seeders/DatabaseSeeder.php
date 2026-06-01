@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -31,5 +31,13 @@ class DatabaseSeeder extends Seeder
             // ربط الكتاب بمؤلف عشوائي واحد
             $book->authors()->attach($authors->random(1)->pluck('id')->toArray());
         });
+        $this->call(AdminSeeder::class);
+
+        // إذا أردت إنشاء بيانات إضافية يمكنك إلغاء التعليق عن السطرين التاليين:
+        // \App\Models\Book::factory(10)->create();
+        // User::factory()->create([
+        //     'name' => 'Test User',
+        //     'email' => 'test@example.com',
+        // ]);
     }
 }
