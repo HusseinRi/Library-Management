@@ -82,8 +82,8 @@ class AuthController extends Controller
         // 1. جلب المستخدم المطلوب
         $user = User::where('email', $request->email)->first();
 
-        // 2. الفحص الأول: مطابقة الكود
-        if ($user->otp_code !== $request->otp_code) {
+        // 2. الفحص الأول: مطابقة الكود (التحويل لـ string ضروري لتفادي مشكلة SQLite)
+        if ((string)$user->otp_code !== (string)$request->otp_code) {
             return response()->json(['message' => 'The provided OTP code is incorrect.'], 422);
         }
 
@@ -122,6 +122,10 @@ class AuthController extends Controller
     {
         $user = User::where('email', $request->email)->first();
 
+        if (!$user) {
+            return response()->json(['message' => 'User not found.'], 404);
+        }
+
         // توليد OTP جديد وصلاحية جديدة
         $otp = rand(100000, 999999);
 
@@ -145,8 +149,12 @@ class AuthController extends Controller
     {
         $user = User::where('email', $request->email)->first();
 
-        // مطابقة الكود
-        if ($user->otp_code !== $request->otp_code) {
+        if (!$user) {
+            return response()->json(['message' => 'User not found.'], 404);
+        }
+
+        // مطابقة الكود (التحويل لـ string لتفادي مشكلة SQLite)
+        if ((string)$user->otp_code !== (string)$request->otp_code) {
             return response()->json(['message' => 'The provided OTP code is incorrect.'], 422);
         }
 
@@ -167,8 +175,12 @@ class AuthController extends Controller
     {
         $user = User::where('email', $request->email)->first();
 
-        // فحص أمان أخير للتأكد من الكود والوقت
-        if ($user->otp_code !== $request->otp_code || now()->isAfter($user->otp_expires_at)) {
+        if (!$user) {
+            return response()->json(['message' => 'User not found.'], 404);
+        }
+
+        // فحص أمان أخير للتأكد من الكود والوقت (التحويل لـ string لتفادي مشكلة SQLite)
+        if ((string)$user->otp_code !== (string)$request->otp_code || now()->isAfter($user->otp_expires_at)) {
             return response()->json(['message' => 'Invalid or expired OTP code.'], 422);
         }
 
