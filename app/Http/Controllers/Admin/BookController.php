@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateBookRequest;
 use App\Http\Resources\BookResource;
 use App\Models\Book;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class BookController extends Controller
 {
@@ -17,7 +18,7 @@ class BookController extends Controller
 
     public function index()
     {
-        $books = Book::with(['category', 'author'])->get(); // استخدام Eager Loading للأداء
+        $books = Book::with(['categories', 'authors'])->get();
         return BookResource::collection($books);
     }
     /**
@@ -33,11 +34,28 @@ class BookController extends Controller
      */
     public function store(StoreBookRequest $request)
     {
-        $book = Book::create($request->validated());
-        return response()->json([
-            'message' => 'Created successfully',
-            'data' => $book
-        ], 201);
+        // 1. جلب البيانات التي تم فحصها وتمريرها (بدون الملفات بعد)
+        $data = $request->validated();
+
+        // 2. معالجة وتخزين صورة الغلاف (تذهب إلى storage/app/public/books/images)
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('books/images', 'public');
+        }
+
+        // 3. معالجة وتخزين ملف الكتاب (تذهب إلى storage/app/public/books/files)
+        if ($request->hasFile('file_path')) {
+            $data['file_path'] = $request->file('file_path')->store('books', 'public');
+        }
+
+        // 4. إنشاء الكتاب في قاعدة البيانات بالبيانات المكتملة
+        $book = Book::create($data);
+
+        // 5. ربط العلاقات في الجداول الوسيطة
+        $book->categories()->sync($request->category_id);
+        $book->authors()->sync($request->author_id);
+
+        // 6. إعادة الـ Resource
+        return new BookResource($book);
     }
 
     /**
@@ -45,14 +63,11 @@ class BookController extends Controller
      */
     public function show(Book $book) // لاحظ أننا كتبنا اسم الموديل قبل المتغير
     {
-        // هنا لارافل قام بالـ findOrFail تلقائياً خلف الكواليس!
-        // فقط نحتاج تحميل العلاقات للكائن الموجود مسبقاً
-        $book->load(['author', 'category']);
 
-        return response()->json([
-            'success' => true,
-            'data' => $book
-        ], 200);
+        $book->load(['authors', 'categories']);
+        return new BookResource($book);
+
+
     }
 
     /**
@@ -68,7 +83,36 @@ class BookController extends Controller
      */
     public function update(UpdateBookRequest $request, Book $book)
     {
-        $book->update($request->validated());
+        $data = $request->validated();
+
+        // 1. معالجة صورة الغلاف الجديدة (إن وجدت)
+        if ($request->hasFile('image')) {
+            // حذف الصورة القديمة لتوفير المساحة
+            if ($book->image) {
+                Storage::disk('public')->delete($book->image);
+            }
+            $data['image'] = $request->file('image')->store('books/images', 'public');
+        }
+
+        // 2. معالجة ملف الكتاب الجديد (إن وجد)
+        if ($request->hasFile('file_path')) {
+            // حذف الملف القديم
+            if ($book->file_path) {
+                Storage::disk('public')->delete($book->file_path);
+            }
+            $data['file_path'] = $request->file('file_path')->store('books/files', 'public');
+        }
+
+        // 3. تحديث بيانات الكتاب
+        $book->update($data);
+
+        // 4. تحديث العلاقات
+        if ($request->has('category_id')) {
+            $book->categories()->sync($request->category_id);
+        }
+        if ($request->has('author_id')) {
+            $book->authors()->sync($request->author_id);
+        }
 
         return new BookResource($book);
     }
@@ -78,7 +122,22 @@ class BookController extends Controller
      */
     public function destroy(Book $book)
     {
+        // 1. حذف صورة الغلاف من مجلد التخزين العام إذا كانت موجودة
+        if ($book->image) {
+            Storage::disk('public')->delete($book->image);
+        }
+
+        // 2. حذف ملف الـ PDF من مجلد التخزين إذا كان موجوداً
+        if ($book->file_path) {
+            Storage::disk('public')->delete($book->file_path);
+        }
+
+        // 3. حذف سجل الكتاب من قاعدة البيانات
         $book->delete();
-        return response()->json(['message' => 'Book deleted successfully']);
+
+        // 4. إرجاع استجابة نجاح عملية الحذف
+        return response()->json([
+            'message' => 'تم حذف الكتاب والملفات المرتبطة به بنجاح.'
+        ], 200);
     }
 }

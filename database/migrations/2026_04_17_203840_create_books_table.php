@@ -18,7 +18,7 @@ return new class extends Migration {
             $table->string('image')->nullable();
             $table->decimal('price', 8, 2);
             $table->enum('language', ['arabic', 'english']);
-            $table->string('file_path');
+            $table->string('file_path')->nullable();
             $table->enum('file_type', ['pdf', 'epub']);
             $table->date('publish_date');
             $table->softDeletes();

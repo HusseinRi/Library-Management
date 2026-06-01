@@ -11,7 +11,7 @@ class StoreBookRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return true; // تأكد أنها true دائماً لتسمح بمرور الطلب
     }
 
     /**
@@ -23,10 +23,22 @@ class StoreBookRequest extends FormRequest
     {
         return [
             'title' => 'required|string|max:255',
-            'isbn' => 'required|string|unique:books,isbn', // التحقق من عدم التكرار في جدول الكتب
-            'category_id' => 'required|exists:categories,id', // التأكد أن التصنيف موجود فعلاً
-            'author_id' => 'required|exists:authors,id',
-            'total_copies' => 'integer|min:1',
+            'isbn' => 'required|string|unique:books,isbn',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'publish_date' => 'required|date',
+
+            // 👈 التعديل هنا: استخدام file و image بدلاً من string
+            'file_path' => 'required|file|mimes:pdf|max:10240', // ملف PDF، حجم أقصى 10 ميجا
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // صورة، حجم أقصى 2 ميجا
+
+            // 1. التحقق من الأقسام
+            'category_id' => 'required|array',
+            'category_id.*' => 'integer|exists:categories,id',
+
+            // 2. التحقق من المؤلفين
+            'author_id' => 'required|array',
+            'author_id.*' => 'integer|exists:authors,id',
         ];
     }
 }

@@ -23,12 +23,9 @@ class BookFactory extends Factory
             'isbn' => $this->faker->unique()->isbn13(), // رقم دولي فريد من 13 خانة
             'description' => $this->faker->paragraph(), // فقرة نصية للوصف
             'image' => 'books/default.jpg', // مسار افتراضي مؤقت للصور
-            'total_copies' => $this->faker->numberBetween(5, 20), // عدد نسخ بين 5 و 20
-            'available_copies' => $this->faker->numberBetween(1, 5), // نسخ متاحة أقل من الإجمالي
-
-            // ربط العلاقات (المنطق الأهم)
-            'category_id' => Category::factory(), // سينشئ تصنيفاً جديداً لكل كتاب
-            'author_id' => Author::factory(),   // سينشئ مؤلفاً جديداً لكل كتاب
+            'price' => $this->faker->numberBetween(1000, 10000), // يولد سعر عشوائي للكتب المدفوعة
+            'file_path' => 'books/demo.pdf', // مسار وهمي لملف الكتاب الإلكتروني
+            'publish_date' => $this->faker->date(), // 👈 السطر الجديد: لتوليد تاريخ نشر عشوائي وحل مشكلة الداتابيز
         ];
     }
 }

@@ -10,6 +10,7 @@ class BookResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
+     * @param  Request  $request
      * @return array<string, mixed>
      */
     public function toArray($request)
@@ -19,8 +20,27 @@ class BookResource extends JsonResource
             'book_title' => $this->title,
             'isbn_number' => $this->isbn,
             'short_description' => $this->description,
-            'category' => $this->category->name, // جلب اسم التصنيف بدلاً من الـ ID
-            'author' => $this->author->name,     // جلب اسم المؤلف
+            'price' => $this->price,
+            'publish_date' => $this->publish_date,
+
+            // 1. الصورة: نستخدم asset() مع إضافة /storage/ لتوليد رابط ويب كامل ومباشر
+            'image_url' => $this->image ? asset('storage/' . $this->image) : null,
+
+            // 2. ملف الكتاب: نستخدم asset() أيضاً لتوليد رابط مباشر (للتجربة الحالية)
+            'pdf_url' => $this->file_path ? asset('storage/' . $this->file_path) : null,
+
+            'categories' => $this->categories->map(function ($category) {
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                ];
+            }),
+            'authors' => $this->authors->map(function ($author) {
+                return [
+                    'id' => $author->id,
+                    'name' => $author->name,
+                ];
+            }),
         ];
     }
 }
