@@ -1,16 +1,18 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\BookController;
 use App\Http\Controllers\AuthorController;
-use App\Http\Middleware\IsAdmin; // استدعاء الـ Middleware الجديد
+use App\Http\Controllers\OrderController;
+use App\Http\Middleware\IsAdmin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| مسارات المصادقة (Auth Routes)
+| 1. مسارات المصادقة العامة (Public Auth Routes)
 |--------------------------------------------------------------------------
 */
 Route::post('/register', [AuthController::class, 'register']);
@@ -20,33 +22,38 @@ Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/verify-reset-otp', [AuthController::class, 'verifyResetOtp']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
-// مسارات تتطلب مستخدم مسجل دخول (أي مستخدم)
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
-    Route::post('/logout', [AuthController::class, 'logout']);
-});
+/*
+|--------------------------------------------------------------------------
+| 2. مسارات العرض العامة (Public Read-Only Routes)
+|--------------------------------------------------------------------------
+*/
+Route::apiResource('books', BookController::class)->only(['index', 'show']);
+Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
+Route::apiResource('authors', AuthorController::class)->only(['index', 'show']);
 
 /*
 |--------------------------------------------------------------------------
-| مسارات الكتب (Books Routes)
+| 3. مسارات المستخدمين المسجلين (Protected Routes via Sanctum)
 |--------------------------------------------------------------------------
 */
+Route::middleware('auth:sanctum')->group(function () {
 
-// 1. مسارات العرض (متاحة للجميع بدون تسجيل دخول)
-// نستخدم only لنحدد أننا نريد فقط دالتي index (عرض الكل) و show (عرض كتاب واحد)
-Route::apiResource('books', BookController::class)->only(['index', 'show']);
+    // جلب بيانات المستخدم الحالي وسجل طلباته
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+    Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);
+    Route::post('/logout', [AuthController::class, 'logout']);
 
-// 2. مسارات الإدارة (مقتصرة على الـ Admin فقط)
-// نغلفها بتسجيل الدخول أولاً (auth:sanctum) ثم جدار الـ Admin ثانياً (IsAdmin::class)
-Route::middleware(['auth:sanctum', IsAdmin::class])->group(function () {
-
-    // نستخدم only لنحدد دوال الإضافة والتعديل والحذف فقط
-    Route::apiResource('books', BookController::class)->only(['store', 'update', 'destroy']);
-    Route::apiResource('categories', CategoryController::class)->only(['store', 'update', 'destroy']);
-    Route::apiResource('authors', AuthorController::class)->only(['store', 'update', 'destroy']);
-
+    /*
+    |--------------------------------------------------------------------------
+    | 4. جدار حماية المشرفين (Admin-Only Routes)
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware(IsAdmin::class)->group(function () {
+        Route::apiResource('books', BookController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('categories', CategoryController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('authors', AuthorController::class)->only(['store', 'update', 'destroy']);
+        Route::get('/reports/sales', [ReportController::class, 'salesReport']);
+    });
 });
-Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
-Route::apiResource('authors', AuthorController::class)->only(['index', 'show']);
