@@ -44,6 +44,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('my-library', [BookController::class, 'myLibrary']);
 
     /*
     |--------------------------------------------------------------------------

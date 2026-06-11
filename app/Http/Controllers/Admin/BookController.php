@@ -140,4 +140,22 @@ class BookController extends Controller
             'message' => 'تم حذف الكتاب والملفات المرتبطة به بنجاح.'
         ], 200);
     }
+    public function myLibrary(Request $request)
+    {
+
+        $myBooks = Book::whereHas('orders', function ($query) {
+
+            $query->whereIn('order_id', function ($subQuery) {
+                $subQuery->select('id')
+                    ->from('orders')
+                    ->where('user_id', auth()->id());
+            });
+        })->get();
+
+        return response()->json([
+            'success' => true,
+            'books_count' => $myBooks->count(),
+            'data' => $myBooks
+        ], 200);
+    }
 }
