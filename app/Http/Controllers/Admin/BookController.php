@@ -144,9 +144,13 @@ class BookController extends Controller
     {
 
         $myBooks = Book::whereHas('orders', function ($query) {
-            $query->where('user_id', auth()->id());
-        })->get();
 
+            $query->whereIn('order_id', function ($subQuery) {
+                $subQuery->select('id')
+                    ->from('orders')
+                    ->where('user_id', auth()->id());
+            });
+        })->get();
 
         return response()->json([
             'success' => true,
