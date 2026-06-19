@@ -9,17 +9,44 @@ use App\Http\Resources\BookResource;
 use App\Models\Book;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-
+use App\Http\Requests\SearchFilterBook;
 class BookController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
 
-    public function index()
+    public function index(SearchFilterBook $request)
     {
-        $books = Book::with(['categories', 'authors'])->get();
-        return BookResource::collection($books);
+        $query = Book::with(['categories', 'authors']);
+        if ($request->filled('search')) {
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('isbn', '=', $searchTerm );
+            });
+        }
+        if ($request->filled('author')) {
+            $author = $request->input('author');
+            $query->whereHas('authors', function ($q) use ($author) {
+                $q->where('authors.name','like','%'. $author.'%');
+            });
+        }
+        if ($request->filled('category')) {
+            $category =  $request->input('category');
+            $query->whereHas('categories', function ($q) use ($category) {
+                $q->where('categories.name','like','%'. $category.'%');
+            });
+        }
+        if ($request->filled('price')) {
+            $query->where('price', '<=', $request->input('price'));
+        }
+        if ($request->filled('rating')) {
+            $query->where('rating', '>=', $request->input('rating'));
+        }
+        $books = $query->get();
+    return BookResource::collection($books);
+
     }
     /**
      * Show the form for creating a new resource.
@@ -158,4 +185,10 @@ class BookController extends Controller
             'data' => $myBooks
         ], 200);
     }
+
+
+
+    public function search(Request $request){
+    }
+
 }

@@ -22,7 +22,7 @@ class BookResource extends JsonResource
             'short_description' => $this->description,
             'price' => $this->price,
             'publish_date' => $this->publish_date,
-
+            "rating"=>$this->rating,
             // 1. الصورة: نستخدم asset() مع إضافة /storage/ لتوليد رابط ويب كامل ومباشر
             'image_url' => $this->image ? asset('storage/' . $this->image) : null,
 
