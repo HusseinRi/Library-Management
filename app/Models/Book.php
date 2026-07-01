@@ -15,7 +15,8 @@ class Book extends Model
         'description',
         'price',
         'file_path',
-        'image',         // 👈 أضفناه هنا لتفادي مشاكل الـ POST والـ Mass Assignment
+        'image',
+        'rating',         // 👈 أضفناه هنا لتفادي مشاكل الـ POST والـ Mass Assignment
         'publish_date'   // 👈 أضفناه هنا لتفادي مشاكل الـ POST والـ Mass Assignment
     ];
 
@@ -53,4 +54,8 @@ class Book extends Model
     {
         return $this->hasMany(ReadingProgress::class);
     }
+
+    public function reviews() {
+    return $this->hasMany(Review::class);
+}
 }

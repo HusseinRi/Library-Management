@@ -20,6 +20,7 @@ return new class extends Migration {
             $table->enum('language', ['arabic', 'english']);
             $table->string('file_path')->nullable();
             $table->enum('file_type', ['pdf', 'epub']);
+            $table->decimal('rating', 2, 1)->default(1.0);
             $table->date('publish_date');
             $table->softDeletes();
             $table->timestamps();
