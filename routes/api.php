@@ -9,7 +9,6 @@ use App\Http\Controllers\OrderController;
 use App\Http\Middleware\IsAdmin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ReviewController;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,9 +45,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('my-library', [BookController::class, 'myLibrary']);
-    Route::post('/add-review', [ReviewController::class, 'addreview']);
-    Route::post('/rate-book', [ReviewController::class, 'rateBook']);
-    Route::post('/book-reviews', [ReviewController::class, 'getBookReviews']);
 
     /*
     |--------------------------------------------------------------------------

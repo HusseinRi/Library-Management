@@ -11,8 +11,8 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use Hash;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\SendOtpMail;
+use Illuminate\Support\Facades\Mail; // 👈 استدعاء كلاس المراسلة الأساسي
+use App\Mail\SendOtpMail;             // 👈 استدعاء كلاس الإيميل الذي أنشأناه
 
 class AuthController extends Controller
 {
@@ -25,12 +25,13 @@ class AuthController extends Controller
 
         // 2. توليد رمز OTP عشوائي من 6 أرقام
         $otp = rand(100000, 999999);
+
         // 3. إنشاء المستخدم وحفظ حقول الـ OTP مباشرة
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'user',
+            'role' => $request->role ?? 'user',
             'profile_photo' => $profilePhoto,
             'otp_code' => $otp,
             'otp_expires_at' => now()->addMinutes(10),

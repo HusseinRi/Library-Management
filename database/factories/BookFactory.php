@@ -24,8 +24,7 @@ class BookFactory extends Factory
             'description' => $this->faker->paragraph(), // فقرة نصية للوصف
             'image' => 'books/default.jpg', // مسار افتراضي مؤقت للصور
             'price' => $this->faker->numberBetween(1000, 10000), // يولد سعر عشوائي للكتب المدفوعة
-            'file_path' => 'books/demo.pdf',
-            'rating'=>$this->faker->numberBetween(0, 5), // مسار وهمي لملف الكتاب الإلكتروني
+            'file_path' => 'books/demo.pdf', // مسار وهمي لملف الكتاب الإلكتروني
             'publish_date' => $this->faker->date(), // 👈 السطر الجديد: لتوليد تاريخ نشر عشوائي وحل مشكلة الداتابيز
         ];
     }
