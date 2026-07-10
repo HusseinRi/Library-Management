@@ -40,7 +40,8 @@ class OrderController extends Controller
                 $request->user()->myBooks()->create([
                     'book_id' => $book->id,
                     'purchase_date' => now(),
-                    'price' => $book->price
+                    'price' => $book->price,
+                    'source' => 'purchase'
                 ]);
             }
 

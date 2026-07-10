@@ -5,7 +5,9 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\BookController;
 use App\Http\Controllers\AuthorController;
+use App\Http\Controllers\BookFileController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ReadingProgressController;
 use App\Http\Middleware\IsAdmin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -45,7 +47,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('my-library', [BookController::class, 'myLibrary']);
-
+    Route::post('/reading-progress', [ReadingProgressController::class, 'updateProgress']);
+    Route::get('/reading-progress/{book_id}', [ReadingProgressController::class, 'getProgress']);
+    Route::get('/books/{book_id}/stream', [BookFileController::class, 'streamBook']);
     /*
     |--------------------------------------------------------------------------
     | 4. جدار حماية المشرفين (Admin-Only Routes)

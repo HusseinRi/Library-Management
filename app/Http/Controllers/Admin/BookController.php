@@ -44,7 +44,7 @@ class BookController extends Controller
 
         // 3. معالجة وتخزين ملف الكتاب (تذهب إلى storage/app/public/books/files)
         if ($request->hasFile('file_path')) {
-            $data['file_path'] = $request->file('file_path')->store('books', 'public');
+            $data['file_path'] = $request->file('file_path')->store('books', 'local');
         }
 
         // 4. إنشاء الكتاب في قاعدة البيانات بالبيانات المكتملة
@@ -61,7 +61,7 @@ class BookController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Book $book) // لاحظ أننا كتبنا اسم الموديل قبل المتغير
+    public function show(Book $book)
     {
 
         $book->load(['authors', 'categories']);
