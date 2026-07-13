@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\BookController;
 use App\Http\Controllers\AuthorController;
 use App\Http\Controllers\BookFileController;
+use App\Http\Controllers\BookSearchController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ReadingProgressController;
 use App\Http\Middleware\IsAdmin;
@@ -50,6 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reading-progress', [ReadingProgressController::class, 'updateProgress']);
     Route::get('/reading-progress/{book_id}', [ReadingProgressController::class, 'getProgress']);
     Route::get('/books/{book_id}/stream', [BookFileController::class, 'streamBook']);
+    Route::get('/booksSearch', [BookSearchController::class, 'index'])->name('books.search');
     /*
     |--------------------------------------------------------------------------
     | 4. جدار حماية المشرفين (Admin-Only Routes)

@@ -41,6 +41,7 @@ class BookResource extends JsonResource
                     'name' => $author->name,
                 ];
             }),
+            //'average_rating' => $this->ratings_avg_rating ? round($this->ratings_avg_rating, 2) : 0.0,
         ];
     }
 }
