@@ -42,7 +42,6 @@ class BookController extends Controller
             $data['image'] = $request->file('image')->store('books/images', 'public');
         }
 
-        // 3. معالجة وتخزين ملف الكتاب (تذهب إلى storage/app/public/books/files)
         if ($request->hasFile('file_path')) {
             $data['file_path'] = $request->file('file_path')->store('books', 'local');
         }
