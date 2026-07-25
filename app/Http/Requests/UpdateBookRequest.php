@@ -34,16 +34,23 @@ class UpdateBookRequest extends FormRequest
         }
 
         return [
-            'title' => 'sometimes|required|string|max:255',
-            'isbn' => [
-                'sometimes',
-                'required',
-                'string',
-                Rule::unique('books', 'isbn')->ignore($bookId)
-            ],
-            'category_id' => 'sometimes|required|exists:categories,id',
-            'author_id' => 'sometimes|required|exists:authors,id',
-            'total_copies' => 'sometimes|integer|min:1',
+            'title'        => 'sometimes|required|string|max:255',
+            'isbn'         => ['sometimes', 'required', 'string', Rule::unique('books', 'isbn')->ignore($bookId)],
+            'description'  => 'sometimes|nullable|string',
+            'price'        => 'sometimes|required|numeric|min:0',
+            'publish_date' => 'sometimes|required|date',
+
+            // ✅ حقول جديدة
+            'language'     => 'sometimes|required|in:arabic,english',
+            'file_type'    => 'sometimes|required|in:pdf,epub',
+
+            'file_path'    => 'sometimes|file|mimes:pdf,epub|max:10240',
+            'image'        => 'sometimes|nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+
+            'category_id'    => 'sometimes|required|array',
+            'category_id.*'  => 'integer|exists:categories,id',
+            'author_id'    => 'sometimes|required|array',
+            'author_id.*'  => 'integer|exists:authors,id',
         ];
     }
 }

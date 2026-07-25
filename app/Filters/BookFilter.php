@@ -72,13 +72,14 @@ class BookFilter extends AbstractFilter
     /**
      * متطلب التصفية (UC-006): الفلترة حسب التقييم (Rating).
      * يجلب الكتب التي يبلغ متوسط تقييماتها أكبر من أو يساوي الرقم المطلوب بكفاءة عالية.
+     * ✅ تم إصلاح اسم الحقل: rating → stars (يطابق الـ migration)
      */
     public function rating(mixed $value): Builder
     {
         return $this->builder->whereHas('ratings', function (Builder $query) use ($value) {
             $query->select('book_id')
                 ->groupBy('book_id')
-                ->havingRaw('AVG(rating) >= ?', [(float) $value]);
+                ->havingRaw('AVG(stars) >= ?', [(float) $value]);
         });
     }
 }

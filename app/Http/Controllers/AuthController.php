@@ -9,7 +9,7 @@ use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\VerifyOtpRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use Hash;
+use illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail; // 👈 استدعاء كلاس المراسلة الأساسي
 use App\Mail\SendOtpMail;             // 👈 استدعاء كلاس الإيميل الذي أنشأناه
@@ -64,7 +64,14 @@ class AuthController extends Controller
             ], 403);
         }
 
-        // 4. إذا كان الحساب مؤكداً، نولد التوكن ونسمح بالدخول
+        // 4. منع الدخول إذا كان الحساب محظوراً (UC-013)
+        if ($user->status === 'blocked') {
+            return response()->json([
+                'message' => 'Your account has been blocked. Please contact support.'
+            ], 403);
+        }
+
+        // 6. إذا كان الحساب مؤكداً ونشطاً، نولد التوكن ونسمح بالدخول
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([

@@ -22,23 +22,27 @@ class StoreBookRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'required|string|max:255',
-            'isbn' => 'required|string|unique:books,isbn',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
+            'title'        => 'required|string|max:255',
+            'isbn'         => 'required|string|unique:books,isbn',
+            'description'  => 'nullable|string',
+            'price'        => 'required|numeric|min:0',
             'publish_date' => 'required|date',
 
-            // 👈 التعديل هنا: استخدام file و image بدلاً من string
-            'file_path' => 'required|file|mimes:pdf|max:10240', // ملف PDF، حجم أقصى 10 ميجا
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // صورة، حجم أقصى 2 ميجا
+            // ✅ حقول جديدة مطلوبة (تطابق الـ migration)
+            'language'     => 'required|in:arabic,english',
+            'file_type'    => 'required|in:pdf,epub',
+
+            // ملف الكتاب: ندعم PDF و EPUB الآن
+            'file_path'    => 'required|file|mimes:pdf,epub|max:10240',
+            'image'        => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
 
             // 1. التحقق من الأقسام
-            'category_id' => 'required|array',
-            'category_id.*' => 'integer|exists:categories,id',
+            'category_id'    => 'required|array',
+            'category_id.*'  => 'integer|exists:categories,id',
 
             // 2. التحقق من المؤلفين
-            'author_id' => 'required|array',
-            'author_id.*' => 'integer|exists:authors,id',
+            'author_id'    => 'required|array',
+            'author_id.*'  => 'integer|exists:authors,id',
         ];
     }
 }

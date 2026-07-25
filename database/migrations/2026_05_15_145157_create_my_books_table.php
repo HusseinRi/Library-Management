@@ -18,6 +18,9 @@ return new class extends Migration {
             $table->decimal('price', 8, 2);
             $table->enum('source', ['purchase', 'free']);
             $table->timestamps();
+
+            // ✅ منع تكرار شراء نفس الكتاب من قبل نفس المستخدم (UC-022)
+            $table->unique(['user_id', 'book_id']);
         });
     }
 
