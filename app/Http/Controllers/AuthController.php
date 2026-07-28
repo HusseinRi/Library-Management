@@ -9,7 +9,7 @@ use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\VerifyOtpRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail; // 👈 استدعاء كلاس المراسلة الأساسي
 use App\Mail\SendOtpMail;             // 👈 استدعاء كلاس الإيميل الذي أنشأناه
@@ -90,7 +90,7 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         // 2. الفحص الأول: مطابقة الكود (التحويل لـ string ضروري لتفادي مشكلة SQLite)
-        if ((string)$user->otp_code !== (string)$request->otp_code) {
+        if ((string) $user->otp_code !== (string) $request->otp_code) {
             return response()->json(['message' => 'The provided OTP code is incorrect.'], 422);
         }
 
@@ -161,7 +161,7 @@ class AuthController extends Controller
         }
 
         // مطابقة الكود (التحويل لـ string لتفادي مشكلة SQLite)
-        if ((string)$user->otp_code !== (string)$request->otp_code) {
+        if ((string) $user->otp_code !== (string) $request->otp_code) {
             return response()->json(['message' => 'The provided OTP code is incorrect.'], 422);
         }
 
@@ -187,7 +187,7 @@ class AuthController extends Controller
         }
 
         // فحص أمان أخير للتأكد من الكود والوقت (التحويل لـ string لتفادي مشكلة SQLite)
-        if ((string)$user->otp_code !== (string)$request->otp_code || now()->isAfter($user->otp_expires_at)) {
+        if ((string) $user->otp_code !== (string) $request->otp_code || now()->isAfter($user->otp_expires_at)) {
             return response()->json(['message' => 'Invalid or expired OTP code.'], 422);
         }
 

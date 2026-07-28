@@ -11,6 +11,7 @@ class Payment extends Model
         'amount',
         'stripe_payment_intent_id',
         'status',
+        'method',
         'paid_at',
 
     ];

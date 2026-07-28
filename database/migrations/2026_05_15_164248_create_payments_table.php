@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->integer('amount'); // المبلغ بالسنتات
             $table->string('stripe_payment_intent_id')->nullable()->unique(); // تم إضافة معرف سترايب الفريد هنا
             $table->enum('status', ['pending', 'paid', 'failed', 'refunded'])->default('pending'); // تم إضافة pending كحالة افتراضية
+            $table->string('method')->nullable();
             $table->timestamp('paid_at')->nullable(); // تم جعله nullable وتغييره لـ timestamp لتسجيل الوقت بدقة ثانية بدلاً من اليوم فقط
             $table->timestamps();
         });

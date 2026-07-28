@@ -7,7 +7,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Category extends Model
 {
     use HasFactory;
-    protected $fillable = ['name'];
+    protected $fillable = [
+        'name',
+        'name_ar', // <-- أضفه هنا لتسمح للحقل بالفظ الجماعي (Mass Assignment)
+    ];
     public function books()
     {
         return $this->belongsToMany(Book::class);
