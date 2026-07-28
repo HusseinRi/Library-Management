@@ -11,9 +11,14 @@ use App\Http\Controllers\BookFileController;
 use App\Http\Controllers\BookSearchController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\OrderController;
+<<<<<<< HEAD
+use App\Http\Controllers\PaymentController;
+=======
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RatingController;
+>>>>>>> main
 use App\Http\Controllers\ReadingProgressController;
+use App\Http\Controllers\StripeWebhookController;
 use App\Http\Middleware\IsAdmin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +43,7 @@ Route::post('/reset-password',      [AuthController::class, 'resetPassword']);
 Route::apiResource('books', BookController::class)->only(['index', 'show']);
 Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
 Route::apiResource('authors', AuthorController::class)->only(['index', 'show']);
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook']);
 
 // ✅ UC-005 + UC-006: بحث وفلترة عام (لا يحتاج تسجيل دخول)
 Route::get('/booksSearch', [BookSearchController::class, 'index'])->name('books.search');
@@ -49,7 +55,7 @@ Route::get('/books/best-sellers', [BookController::class, 'bestSellers'])->name(
 Route::get('/books/newest', [BookController::class, 'newest'])->name('books.newest');
 
 /*
-|--------------------------------------------------------------------------
+|-------------------------------------------------------------------------ِ-
 | 3. مسارات المستخدمين المسجلين (Protected Routes via Sanctum)
 |--------------------------------------------------------------------------
 */
@@ -79,6 +85,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ===== بث ملف الكتاب (UC-008 — محمي لأنه يتطلب ملكية) =====
     Route::get('/books/{book_id}/stream', [BookFileController::class, 'streamBook']);
+    Route::get('/booksSearch', [BookSearchController::class, 'index'])->name('books.search');
+    Route::post('/payment/initiate', [PaymentController::class, 'initiatePayment']);
 
     // ===== المفضلة (UC-016, UC-017) =====
     Route::get('/favorites',                  [FavoriteController::class, 'index']);

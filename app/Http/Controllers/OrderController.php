@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
+
+
+
     /**
      * ✅ محدّث: منع الشراء المزدوج + حفظ الـ order بـ status=pending
      * (الدفع الفعلي عبر Stripe سيُضاف لاحقاً)

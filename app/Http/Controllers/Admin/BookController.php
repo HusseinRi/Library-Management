@@ -32,9 +32,11 @@ class BookController extends Controller
         $limit = min((int) $request->query('limit', 10), 50);
 
         $books = Book::with(['categories', 'authors'])
-            ->withCount(['orderItems' => function ($q) {
-                $q->whereHas('order', fn($o) => $o->where('status', 'paid'));
-            }])
+            ->withCount([
+                'orderItems' => function ($q) {
+                    $q->whereHas('order', fn($o) => $o->where('status', 'paid'));
+                }
+            ])
             ->having('order_items_count', '>', 0)
             ->orderByDesc('order_items_count')
             ->take($limit)
@@ -191,7 +193,6 @@ class BookController extends Controller
      */
     public function myLibrary(Request $request)
     {
-        // ✅ تبسيط: استخدام علاقة myBooks مباشرة بدل الاستعلام الفرعي المعقد
         $myBooks = Book::with(['categories', 'authors'])
             ->whereHas('myBooks', function ($q) use ($request) {
                 $q->where('user_id', $request->user()->id);

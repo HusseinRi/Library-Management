@@ -13,6 +13,8 @@ return new class extends Migration {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->integer('total_price');
+            $table->enum('status', ['pending', 'completed', 'failed'])->default('pending');
             // ✅ إصلاح: integer → decimal(10,2) لتفادي فقدان الأرقام العشرية
             $table->decimal('total_price', 10, 2)->default(0);
             $table->enum('status', ['pending', 'paid', 'failed', 'refunded'])->default('pending');
