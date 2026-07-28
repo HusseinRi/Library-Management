@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->foreignId('book_id')->constrained()->onDelete('cascade');
             $table->integer('stars');
             $table->unique(['user_id', 'book_id']);
+            $table->text('comment')->nullable();
             $table->timestamps();
         });
     }

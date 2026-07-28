@@ -11,12 +11,9 @@ use App\Http\Controllers\BookFileController;
 use App\Http\Controllers\BookSearchController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\OrderController;
-<<<<<<< HEAD
 use App\Http\Controllers\PaymentController;
-=======
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RatingController;
->>>>>>> main
 use App\Http\Controllers\ReadingProgressController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Middleware\IsAdmin;
@@ -28,12 +25,12 @@ use Illuminate\Support\Facades\Route;
 | 1. مسارات المصادقة العامة (Public Auth Routes)
 |--------------------------------------------------------------------------
 */
-Route::post('/register',            [AuthController::class, 'register']);
-Route::post('/login',               [AuthController::class, 'login']);
-Route::post('/verify-email',        [AuthController::class, 'verifyEmail']);
-Route::post('/forgot-password',     [AuthController::class, 'forgotPassword']);
-Route::post('/verify-reset-otp',    [AuthController::class, 'verifyResetOtp']);
-Route::post('/reset-password',      [AuthController::class, 'resetPassword']);
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/verify-reset-otp', [AuthController::class, 'verifyResetOtp']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 /*
 |--------------------------------------------------------------------------
@@ -66,9 +63,9 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
     // ✅ UC-004: إدارة الملف الشخصي
-    Route::get('/profile',           [ProfileController::class, 'show']);
-    Route::put('/profile',           [ProfileController::class, 'update']);
-    Route::patch('/profile/password',[ProfileController::class, 'changePassword']);
+    Route::get('/profile', [ProfileController::class, 'show']);
+    Route::put('/profile', [ProfileController::class, 'update']);
+    Route::patch('/profile/password', [ProfileController::class, 'changePassword']);
 
     // ===== الطلبات (UC-022) =====
     Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);
@@ -80,7 +77,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my-library', [BookController::class, 'myLibrary']);
 
     // ===== تقدم القراءة (UC-009) =====
-    Route::post('/reading-progress',          [ReadingProgressController::class, 'updateProgress']);
+    Route::post('/reading-progress', [ReadingProgressController::class, 'updateProgress']);
     Route::get('/reading-progress/{book_id}', [ReadingProgressController::class, 'getProgress']);
 
     // ===== بث ملف الكتاب (UC-008 — محمي لأنه يتطلب ملكية) =====
@@ -89,15 +86,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/payment/initiate', [PaymentController::class, 'initiatePayment']);
 
     // ===== المفضلة (UC-016, UC-017) =====
-    Route::get('/favorites',                  [FavoriteController::class, 'index']);
-    Route::post('/favorites',                 [FavoriteController::class, 'store']);
-    Route::delete('/favorites/{book_id}',     [FavoriteController::class, 'destroy']);
-    Route::get('/favorites/{book_id}/check',  [FavoriteController::class, 'check']);
+    Route::get('/favorites', [FavoriteController::class, 'index']);
+    Route::post('/favorites', [FavoriteController::class, 'store']);
+    Route::delete('/favorites/{book_id}', [FavoriteController::class, 'destroy']);
+    Route::get('/favorites/{book_id}/check', [FavoriteController::class, 'check']);
 
     // ===== التقييمات (UC-020) =====
     Route::get('/books/{book_id}/ratings', [RatingController::class, 'bookRatings']);
-    Route::post('/books/{book_id}/ratings',[RatingController::class, 'store']);
-    Route::delete('/ratings/{id}',         [RatingController::class, 'destroy']);
+    Route::post('/books/{book_id}/ratings', [RatingController::class, 'store']);
+    Route::delete('/ratings/{id}', [RatingController::class, 'destroy']);
 
     /*
     |--------------------------------------------------------------------------
@@ -107,23 +104,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware(IsAdmin::class)->group(function () {
 
         // ===== CRUD للكتب والتصنيفات والمؤلفين =====
-        Route::apiResource('books',      BookController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('books', BookController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('categories', CategoryController::class)->only(['store', 'update', 'destroy']);
-        Route::apiResource('authors',    AuthorController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('authors', AuthorController::class)->only(['store', 'update', 'destroy']);
 
         // ===== إدارة المستخدمين (UC-012, UC-013) =====
-        Route::get('/admin/users',                 [UserController::class, 'index']);
-        Route::get('/admin/users/{id}',            [UserController::class, 'show']);
-        Route::patch('/admin/users/{id}/block',    [UserController::class, 'block']);
-        Route::patch('/admin/users/{id}/unblock',  [UserController::class, 'unblock']);
-        Route::delete('/admin/users/{id}',         [UserController::class, 'destroy']);
+        Route::get('/admin/users', [UserController::class, 'index']);
+        Route::get('/admin/users/{id}', [UserController::class, 'show']);
+        Route::patch('/admin/users/{id}/block', [UserController::class, 'block']);
+        Route::patch('/admin/users/{id}/unblock', [UserController::class, 'unblock']);
+        Route::delete('/admin/users/{id}', [UserController::class, 'destroy']);
 
         // ===== لوحة التحكم: الإحصائيات =====
-        Route::get('/admin/stats/overview',        [StatsController::class, 'overview']);
-        Route::get('/admin/stats/sales-chart',     [StatsController::class, 'salesChart']);
-        Route::get('/admin/stats/top-books',       [StatsController::class, 'topBooks']);
-        Route::get('/admin/stats/analytics',       [StatsController::class, 'analytics']);
-        Route::get('/admin/orders/recent',         [StatsController::class, 'recentOrders']);
+        Route::get('/admin/stats/overview', [StatsController::class, 'overview']);
+        Route::get('/admin/stats/sales-chart', [StatsController::class, 'salesChart']);
+        Route::get('/admin/stats/top-books', [StatsController::class, 'topBooks']);
+        Route::get('/admin/stats/analytics', [StatsController::class, 'analytics']);
+        Route::get('/admin/orders/recent', [StatsController::class, 'recentOrders']);
 
         // ===== التقارير المالية (UC-014) =====
         Route::get('/reports/sales', [ReportController::class, 'salesReport']);
