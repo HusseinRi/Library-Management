@@ -42,21 +42,28 @@ class ReportController extends Controller
                     'message' => 'Invalid period specified. Use daily, weekly, monthly, or all.'
                 ], 400);
         }
-        // 1. نجلب القائمة أولاً
-        $ordersList = $query->with('user:id,name')->get();
+        // 1. نجلب القائمة مع الـ payment
+        $ordersList = $query->with(['user:id,name,email', 'payment', 'items.book:id,title,image'])->get();
 
-        // 2. نحسب مباشرة من المصفوفة الراجعة في الذاكرة (سريع جداً وموفر لجهد السيرفر)
-        $totalSales = $ordersList->sum('total_price');
+        // 2. حساب الإحصائيات
+        $paidOrders = $ordersList->where('status', 'paid');
+        $totalSales = $paidOrders->sum('total_price');
         $totalOrdersCount = $ordersList->count();
+        $paidOrdersCount = $paidOrders->count();
+        $refundedOrdersCount = $ordersList->where('status', 'refunded')->count();
+        $avgOrderValue = $paidOrdersCount > 0 ? $totalSales / $paidOrdersCount : 0;
 
         return response()->json([
             'success' => true,
             'report_period' => $period,
             'summary' => [
-                'total_sales' => $totalSales,
-                'total_orders_count' => $totalOrdersCount,
+                'total_sales'             => (float) $totalSales,
+                'total_orders_count'      => $totalOrdersCount,
+                'paid_orders_count'       => $paidOrdersCount,
+                'refunded_orders_count'   => $refundedOrdersCount,
+                'avg_order_value'         => round($avgOrderValue, 2),
             ],
-            'data' => $ordersList
+            'data' => $ordersList,
         ], 200);
     }
 }

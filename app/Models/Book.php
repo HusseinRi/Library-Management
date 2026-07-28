@@ -17,8 +17,10 @@ class Book extends Model
         'description',
         'price',
         'file_path',
-        'image',         // 👈 أضفناه هنا لتفادي مشاكل الـ POST والـ Mass Assignment
-        'publish_date'   // 👈 أضفناه هنا لتفادي مشاكل الـ POST والـ Mass Assignment
+        'image',
+        'publish_date',
+        'language',      // ✅ أضيف لتفادي مشكلة Mass Assignment
+        'file_type',     // ✅ أضيف لتفادي مشكلة Mass Assignment
     ];
 
     public function categories()

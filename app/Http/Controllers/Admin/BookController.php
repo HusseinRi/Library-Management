@@ -14,13 +14,59 @@ class BookController extends Controller
 {
     /**
      * Display a listing of the resource.
+     * يدعم pagination: ?page=&per_page=
      */
-
-    public function index()
+    public function index(Request $request)
     {
-        $books = Book::with(['categories', 'authors'])->get();
+        $perPage = min((int) $request->query('per_page', 15), 100);
+        $books = Book::with(['categories', 'authors'])->latest()->paginate($perPage);
         return BookResource::collection($books);
     }
+
+    /**
+     * UC-015: الكتب الأكثر مبيعاً
+     * GET /api/books/best-sellers?limit=10
+     */
+    public function bestSellers(Request $request)
+    {
+        $limit = min((int) $request->query('limit', 10), 50);
+
+        $books = Book::with(['categories', 'authors'])
+            ->withCount([
+                'orderItems' => function ($q) {
+                    $q->whereHas('order', fn($o) => $o->where('status', 'paid'));
+                }
+            ])
+            ->having('order_items_count', '>', 0)
+            ->orderByDesc('order_items_count')
+            ->take($limit)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => BookResource::collection($books),
+        ], 200);
+    }
+
+    /**
+     * UC-018: أحدث الكتب
+     * GET /api/books/newest?limit=10
+     */
+    public function newest(Request $request)
+    {
+        $limit = min((int) $request->query('limit', 10), 50);
+
+        $books = Book::with(['categories', 'authors'])
+            ->latest()
+            ->take($limit)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => BookResource::collection($books),
+        ], 200);
+    }
+
     /**
      * Show the form for creating a new resource.
      */
@@ -34,7 +80,6 @@ class BookController extends Controller
      */
     public function store(StoreBookRequest $request)
     {
-        // 1. جلب البيانات التي تم فحصها وتمريرها (بدون الملفات بعد)
         $data = $request->validated();
 
         // 2. معالجة وتخزين صورة الغلاف (تذهب إلى storage/app/public/books/images)
@@ -42,6 +87,7 @@ class BookController extends Controller
             $data['image'] = $request->file('image')->store('books/images', 'public');
         }
 
+        // 3. معالجة وتخزين ملف الكتاب (يذهب إلى storage/app/private/books — آمن)
         if ($request->hasFile('file_path')) {
             $data['file_path'] = $request->file('file_path')->store('books', 'local');
         }
@@ -50,8 +96,12 @@ class BookController extends Controller
         $book = Book::create($data);
 
         // 5. ربط العلاقات في الجداول الوسيطة
-        $book->categories()->sync($request->category_id);
-        $book->authors()->sync($request->author_id);
+        if ($request->has('category_id')) {
+            $book->categories()->sync($request->category_id);
+        }
+        if ($request->has('author_id')) {
+            $book->authors()->sync($request->author_id);
+        }
 
         // 6. إعادة الـ Resource
         return new BookResource($book);
@@ -62,11 +112,8 @@ class BookController extends Controller
      */
     public function show(Book $book)
     {
-
         $book->load(['authors', 'categories']);
         return new BookResource($book);
-
-
     }
 
     /**
@@ -93,13 +140,13 @@ class BookController extends Controller
             $data['image'] = $request->file('image')->store('books/images', 'public');
         }
 
-        // 2. معالجة ملف الكتاب الجديد (إن وجد)
+        // 2. معالجة ملف الكتاب الجديد (إن وجد) — ✅ تم الإصلاح: حذف من local وليس public
         if ($request->hasFile('file_path')) {
-            // حذف الملف القديم
+            // حذف الملف القديم من نفس الـ disk الذي حُفظ فيه
             if ($book->file_path) {
-                Storage::disk('public')->delete($book->file_path);
+                Storage::disk('local')->delete($book->file_path);
             }
-            $data['file_path'] = $request->file('file_path')->store('books/files', 'public');
+            $data['file_path'] = $request->file('file_path')->store('books', 'local');
         }
 
         // 3. تحديث بيانات الكتاب
@@ -121,31 +168,37 @@ class BookController extends Controller
      */
     public function destroy(Book $book)
     {
-        // 1. حذف صورة الغلاف من مجلد التخزين العام إذا كانت موجودة
+        // 1. حذف صورة الغلاف من الـ disk العام
         if ($book->image) {
             Storage::disk('public')->delete($book->image);
         }
 
-        // 2. حذف ملف الـ PDF من مجلد التخزين إذا كان موجوداً
+        // 2. حذف ملف الكتاب من الـ disk المحلي (الخاص) — ✅ تم الإصلاح
         if ($book->file_path) {
-            Storage::disk('public')->delete($book->file_path);
+            Storage::disk('local')->delete($book->file_path);
         }
 
-        // 3. حذف سجل الكتاب من قاعدة البيانات
+        // 3. حذف سجل الكتاب من قاعدة البيانات (الـ soft deletes مفعّل)
         $book->delete();
 
-        // 4. إرجاع استجابة نجاح عملية الحذف
         return response()->json([
+            'success' => true,
             'message' => 'تم حذف الكتاب والملفات المرتبطة به بنجاح.'
         ], 200);
     }
+
+    /**
+     * UC-007: عرض مكتبة المستخدم (الكتب المشتراة)
+     * GET /api/my-library
+     */
     public function myLibrary(Request $request)
     {
-        // الانتقال من Book -> OrderItem -> Order
-        $myBooks = Book::whereHas('orders.order', function ($query) {
-            $query->where('user_id', auth()->id())
-                ->where('status', 'completed');
-        })->get();
+        $myBooks = Book::with(['categories', 'authors'])
+            ->whereHas('myBooks', function ($q) use ($request) {
+                $q->where('user_id', $request->user()->id);
+            })
+            ->latest()
+            ->get();
 
         return response()->json([
             'success' => true,

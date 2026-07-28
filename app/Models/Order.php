@@ -10,7 +10,18 @@ class Order extends Model
         'user_id',
         'total_price',
         'status',
+        'status',  // ✅ أضيف (pending, paid, failed, refunded)
     ];
+
+    // Scopes مساعدة
+    public function scopePaid($query)
+    {
+        return $query->where('status', 'paid');
+    }
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
 
     public function user()
     {
