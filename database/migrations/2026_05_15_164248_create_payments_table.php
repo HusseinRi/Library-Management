@@ -13,9 +13,10 @@ return new class extends Migration {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
-            $table->integer('amount');
-            $table->enum('status', ['paid', 'failed', 'refunded']);
-            $table->date('paid_at');
+            $table->integer('amount'); // المبلغ بالسنتات
+            $table->string('stripe_payment_intent_id')->nullable()->unique(); // تم إضافة معرف سترايب الفريد هنا
+            $table->enum('status', ['pending', 'paid', 'failed', 'refunded'])->default('pending'); // تم إضافة pending كحالة افتراضية
+            $table->timestamp('paid_at')->nullable(); // تم جعله nullable وتغييره لـ timestamp لتسجيل الوقت بدقة ثانية بدلاً من اليوم فقط
             $table->timestamps();
         });
     }

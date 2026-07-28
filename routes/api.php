@@ -8,7 +8,9 @@ use App\Http\Controllers\AuthorController;
 use App\Http\Controllers\BookFileController;
 use App\Http\Controllers\BookSearchController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReadingProgressController;
+use App\Http\Controllers\StripeWebhookController;
 use App\Http\Middleware\IsAdmin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -33,9 +35,10 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::apiResource('books', BookController::class)->only(['index', 'show']);
 Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
 Route::apiResource('authors', AuthorController::class)->only(['index', 'show']);
+Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook']);
 
 /*
-|--------------------------------------------------------------------------
+|-------------------------------------------------------------------------ِ-
 | 3. مسارات المستخدمين المسجلين (Protected Routes via Sanctum)
 |--------------------------------------------------------------------------
 */
@@ -52,6 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reading-progress/{book_id}', [ReadingProgressController::class, 'getProgress']);
     Route::get('/books/{book_id}/stream', [BookFileController::class, 'streamBook']);
     Route::get('/booksSearch', [BookSearchController::class, 'index'])->name('books.search');
+    Route::post('/payment/initiate', [PaymentController::class, 'initiatePayment']);
     /*
     |--------------------------------------------------------------------------
     | 4. جدار حماية المشرفين (Admin-Only Routes)
