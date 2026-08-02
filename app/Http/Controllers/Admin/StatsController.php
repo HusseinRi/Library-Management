@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\Book;
@@ -150,24 +151,27 @@ class StatsController extends Controller
     /**
      * GET /api/admin/orders/recent?limit=5
      * أحدث الطلبات للـ Dashboard
+     *
+     * ✅ تم الإصلاح: استخدام OrderResource بدل إرجاع نماذج Eloquent خامًا،
+     *    للحصول على شكل JSON موحّد وآمن في كل الـ Dashboard.
      */
     public function recentOrders(Request $request)
     {
         $limit = min((int) $request->query('limit', 5), 50);
 
-        $orders = Order::with(['user:id,name,email', 'items.book:id,title,image'])
+        $orders = Order::with(['user:id,name,email', 'items.book:id,title,image', 'payment'])
             ->latest()
             ->take($limit)
             ->get();
 
         return response()->json([
             'success' => true,
-            'data' => $orders,
+            'data' => OrderResource::collection($orders),
         ], 200);
     }
 
     /**
-     * GET /api/admin/stats/top-books-analytics
+     * GET /api/admin/stats/analytics
      * إحصائيات إضافية (متوسط التقييم، توزيع الطلبات حسب الحالة)
      */
     public function analytics()

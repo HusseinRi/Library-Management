@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
+use App\Http\Resources\OrderResource;
 use App\Models\User;
 use App\Models\Order;
 use Illuminate\Http\Request;
@@ -64,10 +66,13 @@ class UserController extends Controller
     /**
      * UC-012: عرض مستخدم محدد مع سجل مشترياته
      * GET /api/admin/users/{id}
+     *
+     * ✅ تم الإصلاح: استخدام UserResource لإخفاء الحقول الحساسة
+     *    (password, otp_code, remember_token) بدل إرجاع النموذج خامًا.
      */
     public function show($id)
     {
-        $user = User::findOrFail($id);
+        $user = User::with(['favorites', 'ratings'])->findOrFail($id);
 
         $orders = Order::where('user_id', $id)
             ->with(['items.book', 'payment'])
@@ -75,21 +80,21 @@ class UserController extends Controller
             ->get();
 
         $stats = [
-            'orders_count' => $orders->where('status', 'paid')->count(),
-            'total_spent' => $orders->where('status', 'paid')->sum('total_price'),
+            'orders_count'         => $orders->where('status', 'paid')->count(),
+            'total_spent'          => (float) $orders->where('status', 'paid')->sum('total_price'),
             'favorite_books_count' => $user->favorites()->count(),
-            'ratings_count' => $user->ratings()->count(),
-            'last_login_at' => $user->last_login_at,
-            'last_login_ip' => $user->last_login_ip,
-            'joined_at' => $user->created_at,
+            'ratings_count'        => $user->ratings()->count(),
+            'last_login_at'        => $user->last_login_at ?? null, // عمود قد لا يكون موجوداً بعد
+            'last_login_ip'        => $user->last_login_ip ?? null, // عمود قد لا يكون موجوداً بعد
+            'joined_at'            => $user->created_at?->toIso8601String(),
         ];
 
         return response()->json([
             'success' => true,
             'data' => [
-                'user' => $user,
-                'stats' => $stats,
-                'orders' => $orders,
+                'user'   => new UserResource($user),
+                'stats'  => $stats,
+                'orders' => OrderResource::collection($orders),
             ],
         ], 200);
     }
@@ -123,7 +128,7 @@ class UserController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'User has been blocked and all active sessions were revoked.',
-            'data' => $user->fresh(),
+            'data' => new UserResource($user->fresh()),
         ], 200);
     }
 
@@ -147,7 +152,7 @@ class UserController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'User has been unblocked successfully.',
-            'data' => $user->fresh(),
+            'data' => new UserResource($user->fresh()),
         ], 200);
     }
 
@@ -182,3 +187,4 @@ class UserController extends Controller
         ], 200);
     }
 }
+

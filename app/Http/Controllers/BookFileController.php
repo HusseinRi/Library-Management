@@ -6,6 +6,7 @@ use App\Models\Book; // تأكد من استدعاء موديل الكتب ال�
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class BookFileController extends Controller
 {
@@ -21,7 +22,7 @@ class BookFileController extends Controller
         }
 
 
-        $hasOwnership = \DB::table('my_books')
+        $hasOwnership = DB::table('my_books')
             ->where('user_id', Auth::id())
             ->where('book_id', $bookId)
             ->exists();
@@ -50,6 +51,44 @@ class BookFileController extends Controller
         $headers = [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="' . $book->title . '.pdf"',
+            'X-Content-Type-Options' => 'nosniff',
+        ];
+
+        return response()->file($filePath, $headers);
+    }
+
+    /**
+     * ✅ UC-ADMIN: معاينة/تحميل ملف الكتاب للآدمن فقط (بدون شرط الملكية)
+     * GET /api/admin/books/{book}/file
+     *
+     * - محمي بـ auth:sanctum + IsAdmin (يُعرّف في routes/api.php)
+     * - يقرأ الملف من local disk (storage/app/private/books/...)
+     * - يدعم PDF و EPUB بناءً على file_type
+     */
+    public function adminDownload($bookId)
+    {
+        $book = Book::findOrFail($bookId);
+
+        if (!$book->file_path || !Storage::disk('local')->exists($book->file_path)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'ملف الكتاب غير موجود على السيرفر.'
+            ], 404);
+        }
+
+        $filePath = Storage::disk('local')->path($book->file_path);
+
+        // تحديد Content-Type بناءً على نوع الملف
+        $contentType = $book->file_type === 'epub'
+            ? 'application/epub+zip'
+            : 'application/pdf';
+
+        $extension = $book->file_type === 'epub' ? 'epub' : 'pdf';
+        $safeTitle = preg_replace('/[^\p{L}\p{N}\-_ ]/u', '', $book->title);
+
+        $headers = [
+            'Content-Type'           => $contentType,
+            'Content-Disposition'    => 'inline; filename="' . $safeTitle . '.' . $extension . '"',
             'X-Content-Type-Options' => 'nosniff',
         ];
 

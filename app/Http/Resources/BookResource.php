@@ -26,8 +26,14 @@ class BookResource extends JsonResource
             // 1. الصورة: نستخدم asset() مع إضافة /storage/ لتوليد رابط ويب كامل ومباشر
             'image_url' => $this->image ? asset('storage/' . $this->image) : null,
 
-            // 2. ملف الكتاب: نستخدم asset() أيضاً لتوليد رابط مباشر (للتجربة الحالية)
-            'pdf_url' => $this->file_path ? asset('storage/' . $this->file_path) : null,
+            // 2. ملف الكتاب: رابط آمن للآدمن فقط عبر endpoint مخصص
+            //    (الملف محفوظ على local disk، لا يمكن الوصول إليه عبر /storage/ مباشرة)
+            'pdf_url' => $this->file_path
+                ? url('/api/admin/books/' . $this->id . '/file')
+                : null,
+
+            // 3. نوع الملف: مفيد للـ Frontend ليعرف هل يفتح PDF أم EPUB
+            'file_type' => $this->file_type,
 
             'categories' => $this->categories->map(function ($category) {
                 return [

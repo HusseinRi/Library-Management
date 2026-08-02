@@ -108,6 +108,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('categories', CategoryController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('authors', AuthorController::class)->only(['store', 'update', 'destroy']);
 
+        // ===== معاينة/تحميل ملف كتاب (بدون شرط الملكية — للآدمن فقط) =====
+        // ✅ UC-ADMIN: تُستخدم بياناته عبر BookResource::pdf_url
+        Route::get('/admin/books/{book_id}/file', [BookFileController::class, 'adminDownload'])
+            ->name('admin.books.file');
+
         // ===== إدارة المستخدمين (UC-012, UC-013) =====
         Route::get('/admin/users', [UserController::class, 'index']);
         Route::get('/admin/users/{id}', [UserController::class, 'show']);

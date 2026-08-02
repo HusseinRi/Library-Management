@@ -13,14 +13,20 @@ class AuthorController extends Controller
     public function index()
     {
         $authors = Author::all();
-        return AuthorResource::collection($authors);
+
+        return response()->json([
+            'success' => true,
+            'data'    => AuthorResource::collection($authors),
+        ], 200);
     }
 
     public function store(StoreAuthorRequest $request)
     {
-        $author = Author::create($request->only(['name']));
+        $author = Author::create($request->only(['name', 'bio']));
 
-        return new AuthorResource($author);
+        return (new AuthorResource($author))
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function show(Author $author)
@@ -39,6 +45,10 @@ class AuthorController extends Controller
     public function destroy(Author $author)
     {
         $author->delete();
-        return response()->json(['message' => 'Category deleted successfully']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Author deleted successfully.',
+        ], 200);
     }
 }

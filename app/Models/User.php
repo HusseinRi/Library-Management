@@ -25,6 +25,7 @@ class User extends Authenticatable
         'password',
         'profile_photo',
         'role',
+        'status',
         'otp_code',
         'otp_expires_at',
     ];
@@ -37,6 +38,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'otp_code',
+        'otp_expires_at',
     ];
     public function ratings()
     {
