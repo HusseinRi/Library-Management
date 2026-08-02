@@ -23,6 +23,9 @@ class BookResource extends JsonResource
             'price' => $this->price,
             'publish_date' => $this->publish_date,
 
+            // ✅ Phase 2: إضافة language (كانت مفقودة في Phase 1)
+            'language' => $this->language,
+
             // 1. الصورة: نستخدم asset() مع إضافة /storage/ لتوليد رابط ويب كامل ومباشر
             'image_url' => $this->image ? asset('storage/' . $this->image) : null,
 

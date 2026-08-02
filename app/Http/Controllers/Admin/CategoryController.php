@@ -18,7 +18,8 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        $categories = Category::all();
+        // ✅ Phase 2: استخدام withCount لإرجاع books_count في الاستجابة
+        $categories = Category::withCount('books')->get();
 
         return response()->json([
             'success' => true,

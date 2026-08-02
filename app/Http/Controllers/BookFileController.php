@@ -6,7 +6,6 @@ use App\Models\Book; // تأكد من استدعاء موديل الكتب ال�
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class BookFileController extends Controller
 {
@@ -22,7 +21,7 @@ class BookFileController extends Controller
         }
 
 
-        $hasOwnership = DB::table('my_books')
+        $hasOwnership = \DB::table('my_books')
             ->where('user_id', Auth::id())
             ->where('book_id', $bookId)
             ->exists();

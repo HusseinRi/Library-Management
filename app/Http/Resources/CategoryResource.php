@@ -17,6 +17,9 @@ class CategoryResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            // ✅ Phase 2: إضافة name_ar + books_count لاستخدامها في الـ dashboard
+            'name_ar' => $this->name_ar,
+            'books_count' => $this->whenCounted('books', $this->resource->books_count ?? null),
             // إذا كنت بدك تعرض الكتب التابعة لهذا القسم في هذا الريسورس:
             'books' => BookResource::collection($this->whenLoaded('books')),
             // حقول الوقت (اختياري)

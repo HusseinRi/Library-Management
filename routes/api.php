@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\StatsController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\BookController;
 use App\Http\Controllers\AuthorController;
@@ -126,6 +127,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/stats/top-books', [StatsController::class, 'topBooks']);
         Route::get('/admin/stats/analytics', [StatsController::class, 'analytics']);
         Route::get('/admin/orders/recent', [StatsController::class, 'recentOrders']);
+
+        // ===== ✅ Phase 2: إدارة الطلبات (للآدمن) =====
+        // يعرض كل الطلبات مع pagination + filters (search, status, period)
+        Route::get('/admin/orders', [AdminOrderController::class, 'index'])->name('admin.orders.index');
+        Route::get('/admin/orders/{id}', [AdminOrderController::class, 'show'])->name('admin.orders.show');
 
         // ===== التقارير المالية (UC-014) =====
         Route::get('/reports/sales', [ReportController::class, 'salesReport']);

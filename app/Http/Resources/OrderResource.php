@@ -27,7 +27,9 @@ class OrderResource extends JsonResource
 
             'payment' => $this->whenLoaded('payment', fn () => [
                 'id'                     => $this->payment->id,
-                'amount'                 => $this->payment->amount,
+                // ✅ Phase 2: إعادة تسمية amount → amount_cents (Best Practice من Stripe)
+                //    المبلغ بالسنتات (integer) — الـ Frontend يستخدم formatCents() لتحويله لدولار
+                'amount_cents'           => $this->payment->amount,
                 'status'                 => $this->payment->status,
                 'method'                 => $this->payment->method,
                 'stripe_payment_intent_id' => $this->payment->stripe_payment_intent_id,

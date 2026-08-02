@@ -18,6 +18,8 @@ class AuthorResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'bio' => $this->bio,
+            // ✅ Phase 2: إضافة books_count لاستخدامها في الـ dashboard
+            'books_count' => $this->whenCounted('books', $this->resource->books_count ?? null),
             'books' => BookResource::collection($this->whenLoaded('books')),
             'created_at' => $this->created_at ? $this->created_at->format('Y-m-d') : null,
         ];
