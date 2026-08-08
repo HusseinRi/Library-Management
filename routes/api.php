@@ -34,64 +34,56 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 /*
 |--------------------------------------------------------------------------
-| 2. مسارات العرض العامة (Public Read-Only Routes)
+| 2. مسارات العرض العامة والخاصة بالكتب (تُعنَون المسارات المحددة أولاً)
 |--------------------------------------------------------------------------
 */
-Route::apiResource('books', BookController::class)->only(['index', 'show']);
+// ✅ المسارات الصريحة للكتب يجب أن توضع قَبْل apiResource عشان ما يعتبرها ID
+Route::get('/booksSearch', [BookSearchController::class, 'index'])->name('books.search');
+Route::get('/books/best-sellers', [BookController::class, 'bestSellers'])->name('books.best-sellers');
+Route::get('/books/newest', [BookController::class, 'newest'])->name('books.newest');
+
 Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
 Route::apiResource('authors', AuthorController::class)->only(['index', 'show']);
 Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook']);
 
-// ✅ UC-005 + UC-006: بحث وفلترة عام (لا يحتاج تسجيل دخول)
-Route::get('/booksSearch', [BookSearchController::class, 'index'])->name('books.search');
-
-// ✅ UC-015: الكتب الأكثر مبيعاً (عام)
-Route::get('/books/best-sellers', [BookController::class, 'bestSellers'])->name('books.best-sellers');
-
-// ✅ UC-018: أحدث الكتب (عام)
-Route::get('/books/newest', [BookController::class, 'newest'])->name('books.newest');
-
 /*
-|-------------------------------------------------------------------------ِ-
+|--------------------------------------------------------------------------
 | 3. مسارات المستخدمين المسجلين (Protected Routes via Sanctum)
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth:sanctum')->group(function () {
 
-    // ===== بيانات المستخدم الحالي والملف الشخصي =====
+    // ===== بيانات المستخدم والاهتمامات =====
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-    // ✅ UC-004: إدارة الملف الشخصي
+
+    // ✅ وضع مسار الاقتراحات هنا في الأعلى داخل الحماية وقبل apiResource الخاص بالعرض
+    Route::get('/books/recommendations', [BookController::class, 'recommendations']);
+    Route::post('/user/preferences', [AuthController::class, 'setPreferences']);
+
+    // ===== إدارة الملف الشخصي =====
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
     Route::patch('/profile/password', [ProfileController::class, 'changePassword']);
 
-    // ===== الطلبات (UC-022) =====
+    // ===== الطلبات والمكتبة =====
     Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);
-
-    // ===== المصادقة: تسجيل الخروج =====
     Route::post('/logout', [AuthController::class, 'logout']);
-
-    // ===== مكتبة المستخدم (UC-007) =====
     Route::get('/my-library', [BookController::class, 'myLibrary']);
 
-    // ===== تقدم القراءة (UC-009) =====
+    // ===== تقدم القراءة والبث والإنشاء =====
     Route::post('/reading-progress', [ReadingProgressController::class, 'updateProgress']);
     Route::get('/reading-progress/{book_id}', [ReadingProgressController::class, 'getProgress']);
-
-    // ===== بث ملف الكتاب (UC-008 — محمي لأنه يتطلب ملكية) =====
     Route::get('/books/{book_id}/stream', [BookFileController::class, 'streamBook']);
-    Route::get('/booksSearch', [BookSearchController::class, 'index'])->name('books.search');
     Route::post('/payment/initiate', [PaymentController::class, 'initiatePayment']);
 
-    // ===== المفضلة (UC-016, UC-017) =====
+    // ===== المفضلة والتقييمات =====
     Route::get('/favorites', [FavoriteController::class, 'index']);
     Route::post('/favorites', [FavoriteController::class, 'store']);
     Route::delete('/favorites/{book_id}', [FavoriteController::class, 'destroy']);
     Route::get('/favorites/{book_id}/check', [FavoriteController::class, 'check']);
 
-    // ===== التقييمات (UC-020) =====
     Route::get('/books/{book_id}/ratings', [RatingController::class, 'bookRatings']);
     Route::post('/books/{book_id}/ratings', [RatingController::class, 'store']);
     Route::delete('/ratings/{id}', [RatingController::class, 'destroy']);
@@ -102,27 +94,29 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware(IsAdmin::class)->group(function () {
-
-        // ===== CRUD للكتب والتصنيفات والمؤلفين =====
         Route::apiResource('books', BookController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('categories', CategoryController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('authors', AuthorController::class)->only(['store', 'update', 'destroy']);
 
-        // ===== إدارة المستخدمين (UC-012, UC-013) =====
         Route::get('/admin/users', [UserController::class, 'index']);
         Route::get('/admin/users/{id}', [UserController::class, 'show']);
         Route::patch('/admin/users/{id}/block', [UserController::class, 'block']);
         Route::patch('/admin/users/{id}/unblock', [UserController::class, 'unblock']);
         Route::delete('/admin/users/{id}', [UserController::class, 'destroy']);
 
-        // ===== لوحة التحكم: الإحصائيات =====
         Route::get('/admin/stats/overview', [StatsController::class, 'overview']);
         Route::get('/admin/stats/sales-chart', [StatsController::class, 'salesChart']);
         Route::get('/admin/stats/top-books', [StatsController::class, 'topBooks']);
         Route::get('/admin/stats/analytics', [StatsController::class, 'analytics']);
         Route::get('/admin/orders/recent', [StatsController::class, 'recentOrders']);
 
-        // ===== التقارير المالية (UC-014) =====
         Route::get('/reports/sales', [ReportController::class, 'salesReport']);
     });
 });
+
+/*
+|--------------------------------------------------------------------------
+| 5. مسار عرض الكتب العام (يوضع في نهاية الملف لمنع تعارض {book} مع المسارات الأخرى)
+|--------------------------------------------------------------------------
+*/
+Route::apiResource('books', BookController::class)->only(['index', 'show']);
