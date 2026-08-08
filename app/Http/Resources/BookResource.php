@@ -21,7 +21,7 @@ class BookResource extends JsonResource
             'isbn_number' => $this->isbn,
             'short_description' => $this->description,
             'price' => $this->price,
-            'publish_date' => $this->publish_date,
+            'publish_date' => $this->publish_date?->format('Y-m-d'),
 
             // ✅ Phase 2: إضافة language (كانت مفقودة في Phase 1)
             'language' => $this->language,
@@ -38,18 +38,24 @@ class BookResource extends JsonResource
             // 3. نوع الملف: مفيد للـ Frontend ليعرف هل يفتح PDF أم EPUB
             'file_type' => $this->file_type,
 
-            'categories' => $this->categories->map(function ($category) {
-                return [
-                    'id' => $category->id,
+            // ✅ FIX (Bug 500): استخدام whenLoaded بدل الوصول المباشر للعلاقة.
+            //    عند استدعاء BookResource من OrderItemResource، تكون العلاقات غير محمَّلة،
+            //    والوصول لـ $this->categories يُسبب استثناء "property not found" أو lazy loading.
+            //    whenLoaded تُرجع [] افتراضياً دون أي استثناء.
+            'categories' => $this->whenLoaded('categories', function () {
+                return $this->categories->map(fn ($category) => [
+                    'id'   => $category->id,
                     'name' => $category->name,
-                ];
-            }),
-            'authors' => $this->authors->map(function ($author) {
-                return [
-                    'id' => $author->id,
+                ]);
+            }, []),
+
+            'authors' => $this->whenLoaded('authors', function () {
+                return $this->authors->map(fn ($author) => [
+                    'id'   => $author->id,
                     'name' => $author->name,
-                ];
-            }),
+                ]);
+            }, []),
+
             //'average_rating' => $this->ratings_avg_rating ? round($this->ratings_avg_rating, 2) : 0.0,
         ];
     }

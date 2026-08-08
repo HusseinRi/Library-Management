@@ -82,6 +82,7 @@ class StripeWebhookController extends Controller
                         [
                             'purchase_date' => now(),
                             'price' => $item->price,
+                            'source' => 'purchase',
                         ]
                     );
                 }

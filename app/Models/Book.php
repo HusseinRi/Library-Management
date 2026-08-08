@@ -6,10 +6,11 @@ use App\Filters\AbstractFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Book extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'title',
@@ -33,9 +34,15 @@ class Book extends Model
         return $this->belongsToMany(Author::class, 'book_authors');
     }
 
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class, 'book_id');
+    }
+
+    /** @deprecated Use orderItems() instead */
     public function orders()
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->orderItems();
     }
 
     public function ratings()
@@ -61,5 +68,17 @@ class Book extends Model
     {
         // نقوم بتمرير الـ Builder الحالي إلى كلاس الفلترة ليقوم بتركيب شروط الـ SQL ديناميكياً
         return $filter->apply($builder);
+    }
+
+    /**
+     * ✅ FIX: تحويل publish_date تلقائياً إلى Carbon date object.
+     * بدون هذا الـ cast، تُرجع القيمة كـ string عادي من قاعدة البيانات،
+     * مما يُسبب خطأ "Call to a member function format() on string" في BookResource.
+     */
+    protected function casts(): array
+    {
+        return [
+            'publish_date' => 'date',
+        ];
     }
 }

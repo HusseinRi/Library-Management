@@ -29,11 +29,13 @@ class PaymentController extends Controller
         try {
             // 2. جلب الكتب وحساب السعر الإجمالي لمنع تلاعب الفرونت إند بالأسعار
             $books = Book::whereIn('id', $request->book_ids)->get();
-            $totalPrice = $books->sum('price'); // السعر مخزن كـ integer (سنتات)
+            $totalPrice = (float) $books->sum('price');
 
             if ($totalPrice <= 0) {
                 return response()->json(['error' => 'إجمالي السعر غير صالح.'], 400);
             }
+
+            $amountCents = (int) round($totalPrice * 100);
 
             // 3. إنشاء الطلب (Order)
             $order = Order::create([
@@ -56,8 +58,8 @@ class PaymentController extends Controller
 
             // 6. إنشاء الـ Payment Intent لدى Stripe
             $paymentIntent = PaymentIntent::create([
-                'amount' => $totalPrice, // المبلغ بالسنتات (مثلاً: 1000 تعني 10.00$)
-                'currency' => 'usd',     // اختر العملة التي تناسبك
+                'amount' => $amountCents,
+                'currency' => 'usd',
                 'metadata' => [
                     'order_id' => $order->id,
                     'user_id' => auth()->id(),
@@ -67,7 +69,7 @@ class PaymentController extends Controller
             // 7. إنشاء سجل الدفع المبدئي (Payment) وربطه بـ Stripe Intent ID
             Payment::create([
                 'order_id' => $order->id,
-                'amount' => $totalPrice,
+                'amount' => $amountCents,
                 'stripe_payment_intent_id' => $paymentIntent->id,
                 'status' => 'pending',
                 'paid_at' => null, // لم يتم الدفع بعد

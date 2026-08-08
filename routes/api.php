@@ -26,8 +26,8 @@ use Illuminate\Support\Facades\Route;
 | 1. مسارات المصادقة العامة (Public Auth Routes)
 |--------------------------------------------------------------------------
 */
+Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
 Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/verify-reset-otp', [AuthController::class, 'verifyResetOtp']);
@@ -38,6 +38,24 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 | 2. مسارات العرض العامة (Public Read-Only Routes)
 |--------------------------------------------------------------------------
 */
+
+// ✅ Diagnostic endpoint — للتحقق من نسخة الـ backend (يستخدمه الـ frontend للتشخيص)
+Route::get('/_health', function () {
+    return response()->json([
+        'success'   => true,
+        'status'    => 'ok',
+        'version'   => 'v3.1',
+        'timestamp' => now()->toIso8601String(),
+        'php'       => PHP_VERSION,
+        'laravel'   => app()->version(),
+        'debug'     => config('app.debug'),
+    ]);
+});
+
+// ✅ UC-015 + UC-018: يجب تسجيلها قبل apiResource لتجنب التقاط {book}
+Route::get('/books/best-sellers', [BookController::class, 'bestSellers'])->name('books.best-sellers');
+Route::get('/books/newest', [BookController::class, 'newest'])->name('books.newest');
+
 Route::apiResource('books', BookController::class)->only(['index', 'show']);
 Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
 Route::apiResource('authors', AuthorController::class)->only(['index', 'show']);
@@ -45,12 +63,6 @@ Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook']
 
 // ✅ UC-005 + UC-006: بحث وفلترة عام (لا يحتاج تسجيل دخول)
 Route::get('/booksSearch', [BookSearchController::class, 'index'])->name('books.search');
-
-// ✅ UC-015: الكتب الأكثر مبيعاً (عام)
-Route::get('/books/best-sellers', [BookController::class, 'bestSellers'])->name('books.best-sellers');
-
-// ✅ UC-018: أحدث الكتب (عام)
-Route::get('/books/newest', [BookController::class, 'newest'])->name('books.newest');
 
 /*
 |-------------------------------------------------------------------------ِ-
@@ -83,7 +95,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ===== بث ملف الكتاب (UC-008 — محمي لأنه يتطلب ملكية) =====
     Route::get('/books/{book_id}/stream', [BookFileController::class, 'streamBook']);
-    Route::get('/booksSearch', [BookSearchController::class, 'index'])->name('books.search');
     Route::post('/payment/initiate', [PaymentController::class, 'initiatePayment']);
 
     // ===== المفضلة (UC-016, UC-017) =====
