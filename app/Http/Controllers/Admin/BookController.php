@@ -206,4 +206,55 @@ class BookController extends Controller
             'data' => $myBooks
         ], 200);
     }
+    /**
+     * UC-019: الكتب المقترحة للمستخدم بناءً على الاهتمامات والمشتريات والمفضلة
+     * GET /api/books/recommendations?limit=10
+     */
+    public function recommendations(Request $request)
+    {
+        $user = $request->user();
+        $perPage = min((int) $request->query('per_page', 15), 50);
+
+        // 1. الكتب المشتراة (لاستبعادها من العرض)
+        $purchasedBookIds = $user->myBooks()->pluck('book_id');
+
+        // 2. تجميع التصنيفات المستهدفة (المفضلة + المشتريات + قائمة المفضلة)
+        $preferredCatIds = $user->categories()->pluck('categories.id');
+
+        $purchasedCatIds = \App\Models\Category::whereHas('books.myBooks', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })->pluck('id');
+
+        $favoriteCatIds = \App\Models\Category::whereHas('books.favorites', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })->pluck('id');
+
+        $targetCategoryIds = $preferredCatIds
+            ->merge($purchasedCatIds)
+            ->merge($favoriteCatIds)
+            ->unique()
+            ->values()
+            ->toArray();
+
+        // 3. بناء الاستعلام مع ترتيب ذكي (الكتب المقترحة أولاً ثم البقية)
+        $query = Book::with(['categories', 'authors'])
+            ->whereNotIn('id', $purchasedBookIds);
+
+        if (!empty($targetCategoryIds)) {
+            // حقل وهمي (is_recommended) يأخذ 1 إذا كان الكتاب ينتمي للتصنيفات المفضلة و0 إذا لم ينتمِ
+            $placeholders = implode(',', array_fill(0, count($targetCategoryIds), '?'));
+
+            $query->selectRaw('books.*, EXISTS (
+            SELECT 1 FROM book_categories 
+            WHERE book_categories.book_id = books.id 
+            AND book_categories.category_id IN (' . $placeholders . ')
+        ) as is_recommended', $targetCategoryIds)
+                ->orderByDesc('is_recommended');
+        }
+
+        // الترتيب الثانوي بحسب الأحدث للكتب المتبقية
+        $books = $query->latest('books.created_at')->paginate($perPage);
+
+        return BookResource::collection($books);
+    }
 }
