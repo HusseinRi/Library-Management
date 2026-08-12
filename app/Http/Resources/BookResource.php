@@ -17,9 +17,9 @@ class BookResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'book_title' => $this->title,
-            'isbn_number' => $this->isbn,
-            'short_description' => $this->description,
+            'title' => $this->title,
+            'isbn' => $this->isbn,
+            'description' => $this->description,
             'price' => $this->price,
             'publish_date' => $this->publish_date?->format('Y-m-d'),
 
@@ -31,7 +31,7 @@ class BookResource extends JsonResource
 
             // 2. ملف الكتاب: رابط آمن للآدمن فقط عبر endpoint مخصص
             //    (الملف محفوظ على local disk، لا يمكن الوصول إليه عبر /storage/ مباشرة)
-            'pdf_url' => $this->file_path
+            'file_path' => $this->file_path
                 ? url('/api/admin/books/' . $this->id . '/file')
                 : null,
 
