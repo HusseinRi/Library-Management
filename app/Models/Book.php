@@ -19,6 +19,9 @@ class Book extends Model
         'file_path',
         'image',
         'publish_date',
+        'audio_path',
+        'audio_sample_path',
+        'duration',
         'language',      // ✅ أضيف لتفادي مشكلة Mass Assignment
         'file_type',     // ✅ أضيف لتفادي مشكلة Mass Assignment
     ];
@@ -62,4 +65,5 @@ class Book extends Model
         // نقوم بتمرير الـ Builder الحالي إلى كلاس الفلترة ليقوم بتركيب شروط الـ SQL ديناميكياً
         return $filter->apply($builder);
     }
+
 }
