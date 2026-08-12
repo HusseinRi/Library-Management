@@ -45,6 +45,7 @@ Route::get('/books/newest', [BookController::class, 'newest'])->name('books.newe
 Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
 Route::apiResource('authors', AuthorController::class)->only(['index', 'show']);
 Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook']);
+Route::get('/books/{book_id}/stream-sample', [BookFileController::class, 'streamAudioSample']);
 
 /*
 |--------------------------------------------------------------------------
@@ -65,10 +66,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // ===== إدارة الملف الشخصي =====
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
-    Route::patch('/profile/password', [ProfileController::class, 'changePassword']);
+
 
     // ===== الطلبات والمكتبة =====
     Route::apiResource('orders', OrderController::class)->only(['index', 'store', 'show']);
+    Route::get('/books/{book_id}/stream-audio', [BookFileController::class, 'streamAudio']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/my-library', [BookController::class, 'myLibrary']);
 

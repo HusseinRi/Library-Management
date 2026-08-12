@@ -6,43 +6,39 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreBookRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return true; // تأكد أنها true دائماً لتسمح بمرور الطلب
+        return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-            'title'        => 'required|string|max:255',
-            'isbn'         => 'required|string|unique:books,isbn',
-            'description'  => 'nullable|string',
-            'price'        => 'required|numeric|min:0',
+            'title' => 'required|string|max:255',
+            'isbn' => 'required|string|unique:books,isbn',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
             'publish_date' => 'required|date',
+            'language' => 'required|in:arabic,english',
 
-            // ✅ حقول جديدة مطلوبة (تطابق الـ migration)
-            'language'     => 'required|in:arabic,english',
-            'file_type'    => 'required|in:pdf,epub',
+            // نوع الملف الرئيسي (PDF, EPUB, MP3, إلخ)
+            'file_type' => 'required|in:pdf,epub,mp3,audio',
 
-            // ملف الكتاب: ندعم PDF و EPUB الآن
-            'file_path'    => 'required|file|mimes:pdf,epub|max:10240',
-            'image'        => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            // جعل المستند اختیاري في حال كان الكتاب صوتياً فقط
+            'file_path' => 'nullable|file|mimes:pdf,epub|max:20480',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
 
-            // 1. التحقق من الأقسام
-            'category_id'    => 'required|array',
-            'category_id.*'  => 'integer|exists:categories,id',
+            // 👈 حقول الكتب الصوتية الجديدة
+            'audio_file' => 'nullable|file|mimes:mp3,m4a,wav,aac|max:102400', // حد أقصى 100 ميجابايت
+            'audio_sample' => 'nullable|file|mimes:mp3,m4a,wav,aac|max:20480',  // عينة مجانية
+            'duration' => 'nullable|string|max:25',                         // مثال: "01:25:40"
 
-            // 2. التحقق من المؤلفين
-            'author_id'    => 'required|array',
-            'author_id.*'  => 'integer|exists:authors,id',
+            // العلاقات
+            'category_id' => 'required|array',
+            'category_id.*' => 'integer|exists:categories,id',
+
+            'author_id' => 'required|array',
+            'author_id.*' => 'integer|exists:authors,id',
         ];
     }
 }

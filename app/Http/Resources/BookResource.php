@@ -7,12 +7,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class BookResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @param  Request  $request
-     * @return array<string, mixed>
-     */
     public function toArray($request)
     {
         return [
@@ -22,26 +16,34 @@ class BookResource extends JsonResource
             'short_description' => $this->description,
             'price' => $this->price,
             'publish_date' => $this->publish_date,
+            'file_type' => $this->file_type,
+            'duration' => $this->duration,
 
-            // 1. الصورة: نستخدم asset() مع إضافة /storage/ لتوليد رابط ويب كامل ومباشر
+            // صورة الغلاف (عامة)
             'image_url' => $this->image ? asset('storage/' . $this->image) : null,
 
-            // 2. ملف الكتاب: نستخدم asset() أيضاً لتوليد رابط مباشر (للتجربة الحالية)
-            'pdf_url' => $this->file_path ? asset('storage/' . $this->file_path) : null,
+            // رابط ملف الكتاب PDF/EPUB المحمي (يعود عبر الـ Stream Route)
+            'pdf_url' => $this->file_path
+                ? url('/api/books/' . $this->id . '/stream')
+                : null,
+
+            // رابط العينة الصوتية (عام)
+            'audio_sample_url' => $this->audio_sample_path
+                ? url('/api/books/' . $this->id . '/stream-sample')
+                : null,
+
+            // رابط الصوت الكامل المحمي
+            'has_audio' => (bool) $this->audio_path,
+            'audio_stream_url' => $this->audio_path
+                ? url('/api/books/' . $this->id . '/stream-audio')
+                : null,
 
             'categories' => $this->categories->map(function ($category) {
-                return [
-                    'id' => $category->id,
-                    'name' => $category->name,
-                ];
+                return ['id' => $category->id, 'name' => $category->name];
             }),
             'authors' => $this->authors->map(function ($author) {
-                return [
-                    'id' => $author->id,
-                    'name' => $author->name,
-                ];
+                return ['id' => $author->id, 'name' => $author->name];
             }),
-            //'average_rating' => $this->ratings_avg_rating ? round($this->ratings_avg_rating, 2) : 0.0,
         ];
     }
 }
