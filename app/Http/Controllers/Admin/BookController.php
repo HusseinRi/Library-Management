@@ -66,7 +66,102 @@ class BookController extends Controller
             'data' => BookResource::collection($books),
         ], 200);
     }
+    public function store(StoreBookRequest $request)
+    {
+        $data = $request->validated();
 
+        // 1. صورة الغلاف
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('books/images', 'public');
+        }
+
+        // 2. ملف الكتاب (PDF/EPUB) - محمي
+        if ($request->hasFile('file_path')) {
+            $data['file_path'] = $request->file('file_path')->store('books/documents', 'local');
+        }
+
+        // 3. ملف الكتاب الصوتي الكامل - محمي
+        if ($request->hasFile('audio_file')) {
+            $data['audio_path'] = $request->file('audio_file')->store('books/audio', 'local');
+        }
+
+        // 4. ملف العينة الصوتية المجانية - عام
+        if ($request->hasFile('audio_sample')) {
+            $data['audio_sample_path'] = $request->file('audio_sample')->store('books/audio_samples', 'public');
+        }
+
+        $book = Book::create($data);
+
+        if ($request->has('category_id')) {
+            $book->categories()->sync($request->category_id);
+        }
+        if ($request->has('author_id')) {
+            $book->authors()->sync($request->author_id);
+        }
+
+        return new BookResource($book);
+    }
+
+    public function update(UpdateBookRequest $request, Book $book)
+    {
+        $data = $request->validated();
+
+        // تحديث الصورة
+        if ($request->hasFile('image')) {
+            if ($book->image)
+                Storage::disk('public')->delete($book->image);
+            $data['image'] = $request->file('image')->store('books/images', 'public');
+        }
+
+        // تحديث المستند
+        if ($request->hasFile('file_path')) {
+            if ($book->file_path)
+                Storage::disk('local')->delete($book->file_path);
+            $data['file_path'] = $request->file('file_path')->store('books/documents', 'local');
+        }
+
+        // تحديث الملف الصوتي الكامل
+        if ($request->hasFile('audio_file')) {
+            if ($book->audio_path)
+                Storage::disk('local')->delete($book->audio_path);
+            $data['audio_path'] = $request->file('audio_file')->store('books/audio', 'local');
+        }
+
+        // تحديث العينة الصوتية
+        if ($request->hasFile('audio_sample')) {
+            if ($book->audio_sample_path)
+                Storage::disk('public')->delete($book->audio_sample_path);
+            $data['audio_sample_path'] = $request->file('audio_sample')->store('books/audio_samples', 'public');
+        }
+
+        $book->update($data);
+
+        if ($request->has('category_id'))
+            $book->categories()->sync($request->category_id);
+        if ($request->has('author_id'))
+            $book->authors()->sync($request->author_id);
+
+        return new BookResource($book);
+    }
+
+    public function destroy(Book $book)
+    {
+        if ($book->image)
+            Storage::disk('public')->delete($book->image);
+        if ($book->file_path)
+            Storage::disk('local')->delete($book->file_path);
+        if ($book->audio_path)
+            Storage::disk('local')->delete($book->audio_path);
+        if ($book->audio_sample_path)
+            Storage::disk('public')->delete($book->audio_sample_path);
+
+        $book->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم حذف الكتاب بجميع ملفاته بنجاح.'
+        ], 200);
+    }
     /**
      * Show the form for creating a new resource.
      */
@@ -78,34 +173,7 @@ class BookController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreBookRequest $request)
-    {
-        $data = $request->validated();
 
-        // 2. معالجة وتخزين صورة الغلاف (تذهب إلى storage/app/public/books/images)
-        if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('books/images', 'public');
-        }
-
-        // 3. معالجة وتخزين ملف الكتاب (يذهب إلى storage/app/private/books — آمن)
-        if ($request->hasFile('file_path')) {
-            $data['file_path'] = $request->file('file_path')->store('books', 'local');
-        }
-
-        // 4. إنشاء الكتاب في قاعدة البيانات بالبيانات المكتملة
-        $book = Book::create($data);
-
-        // 5. ربط العلاقات في الجداول الوسيطة
-        if ($request->has('category_id')) {
-            $book->categories()->sync($request->category_id);
-        }
-        if ($request->has('author_id')) {
-            $book->authors()->sync($request->author_id);
-        }
-
-        // 6. إعادة الـ Resource
-        return new BookResource($book);
-    }
 
     /**
      * Display the specified resource.
@@ -127,65 +195,12 @@ class BookController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateBookRequest $request, Book $book)
-    {
-        $data = $request->validated();
 
-        // 1. معالجة صورة الغلاف الجديدة (إن وجدت)
-        if ($request->hasFile('image')) {
-            // حذف الصورة القديمة لتوفير المساحة
-            if ($book->image) {
-                Storage::disk('public')->delete($book->image);
-            }
-            $data['image'] = $request->file('image')->store('books/images', 'public');
-        }
-
-        // 2. معالجة ملف الكتاب الجديد (إن وجد) — ✅ تم الإصلاح: حذف من local وليس public
-        if ($request->hasFile('file_path')) {
-            // حذف الملف القديم من نفس الـ disk الذي حُفظ فيه
-            if ($book->file_path) {
-                Storage::disk('local')->delete($book->file_path);
-            }
-            $data['file_path'] = $request->file('file_path')->store('books', 'local');
-        }
-
-        // 3. تحديث بيانات الكتاب
-        $book->update($data);
-
-        // 4. تحديث العلاقات
-        if ($request->has('category_id')) {
-            $book->categories()->sync($request->category_id);
-        }
-        if ($request->has('author_id')) {
-            $book->authors()->sync($request->author_id);
-        }
-
-        return new BookResource($book);
-    }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Book $book)
-    {
-        // 1. حذف صورة الغلاف من الـ disk العام
-        if ($book->image) {
-            Storage::disk('public')->delete($book->image);
-        }
 
-        // 2. حذف ملف الكتاب من الـ disk المحلي (الخاص) — ✅ تم الإصلاح
-        if ($book->file_path) {
-            Storage::disk('local')->delete($book->file_path);
-        }
-
-        // 3. حذف سجل الكتاب من قاعدة البيانات (الـ soft deletes مفعّل)
-        $book->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'تم حذف الكتاب والملفات المرتبطة به بنجاح.'
-        ], 200);
-    }
 
     /**
      * UC-007: عرض مكتبة المستخدم (الكتب المشتراة)
@@ -203,7 +218,58 @@ class BookController extends Controller
         return response()->json([
             'success' => true,
             'books_count' => $myBooks->count(),
-            'data' => $myBooks
+            'data' => BookResource::collection($myBooks)
         ], 200);
+    }
+    /**
+     * UC-019: الكتب المقترحة للمستخدم بناءً على الاهتمامات والمشتريات والمفضلة
+     * GET /api/books/recommendations?limit=10
+     */
+    public function recommendations(Request $request)
+    {
+        $user = $request->user();
+        $perPage = min((int) $request->query('per_page', 15), 50);
+
+        // 1. الكتب المشتراة (لاستبعادها من العرض)
+        $purchasedBookIds = $user->myBooks()->pluck('book_id');
+
+        // 2. تجميع التصنيفات المستهدفة (المفضلة + المشتريات + قائمة المفضلة)
+        $preferredCatIds = $user->categories()->pluck('categories.id');
+
+        $purchasedCatIds = \App\Models\Category::whereHas('books.myBooks', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })->pluck('id');
+
+        $favoriteCatIds = \App\Models\Category::whereHas('books.favorites', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        })->pluck('id');
+
+        $targetCategoryIds = $preferredCatIds
+            ->merge($purchasedCatIds)
+            ->merge($favoriteCatIds)
+            ->unique()
+            ->values()
+            ->toArray();
+
+        // 3. بناء الاستعلام مع ترتيب ذكي (الكتب المقترحة أولاً ثم البقية)
+        $query = Book::with(['categories', 'authors'])
+            ->whereNotIn('id', $purchasedBookIds);
+
+        if (!empty($targetCategoryIds)) {
+            // حقل وهمي (is_recommended) يأخذ 1 إذا كان الكتاب ينتمي للتصنيفات المفضلة و0 إذا لم ينتمِ
+            $placeholders = implode(',', array_fill(0, count($targetCategoryIds), '?'));
+
+            $query->selectRaw('books.*, EXISTS (
+            SELECT 1 FROM book_categories 
+            WHERE book_categories.book_id = books.id 
+            AND book_categories.category_id IN (' . $placeholders . ')
+        ) as is_recommended', $targetCategoryIds)
+                ->orderByDesc('is_recommended');
+        }
+
+        // الترتيب الثانوي بحسب الأحدث للكتب المتبقية
+        $books = $query->latest('books.created_at')->paginate($perPage);
+
+        return BookResource::collection($books);
     }
 }

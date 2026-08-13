@@ -20,6 +20,9 @@ class Book extends Model
         'file_path',
         'image',
         'publish_date',
+        'audio_path',
+        'audio_sample_path',
+        'duration',
         'language',      // ✅ أضيف لتفادي مشكلة Mass Assignment
         'file_type',     // ✅ أضيف لتفادي مشكلة Mass Assignment
     ];
@@ -70,15 +73,4 @@ class Book extends Model
         return $filter->apply($builder);
     }
 
-    /**
-     * ✅ FIX: تحويل publish_date تلقائياً إلى Carbon date object.
-     * بدون هذا الـ cast، تُرجع القيمة كـ string عادي من قاعدة البيانات،
-     * مما يُسبب خطأ "Call to a member function format() on string" في BookResource.
-     */
-    protected function casts(): array
-    {
-        return [
-            'publish_date' => 'date',
-        ];
-    }
 }

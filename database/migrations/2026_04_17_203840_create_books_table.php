@@ -19,7 +19,10 @@ return new class extends Migration {
             $table->decimal('price', 8, 2);
             $table->enum('language', ['arabic', 'english']);
             $table->string('file_path')->nullable();
-            $table->enum('file_type', ['pdf', 'epub']);
+            $table->enum('file_type', ['pdf', 'epub', 'mp3']);
+            $table->string('audio_path')->nullable(); // الملف الصوتي الكامل (محمي)
+            $table->string('audio_sample_path')->nullable(); // العينة المجانية (عام)
+            $table->string('duration')->nullable(); // مدة المقطع الصوتي
             $table->date('publish_date');
             $table->softDeletes();
             $table->timestamps();

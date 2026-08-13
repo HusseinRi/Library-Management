@@ -77,6 +77,7 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Login successful',
             'token' => $token,
+            'has_preferences' => $user->categories()->exists(),
             'user' => new UserResource($user)
         ], 200);
     }
@@ -111,6 +112,7 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Email verified successfully. You are now logged in.',
             'token' => $token,
+            'has_preferences' => $user->categories()->exists(),
             'user' => new UserResource($user),
         ], 200);
     }
@@ -200,6 +202,25 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Password has been reset successfully. You can now login with your new password.'
+        ], 200);
+    }
+    /**
+     * حفظ أو تحديث التصنيفات المفضلة للمستخدم
+     * POST /api/user/preferences
+     */
+    public function setPreferences(Request $request)
+    {
+        $request->validate([
+            'category_ids' => 'required|array',
+            'category_ids.*' => 'exists:categories,id',
+        ]);
+
+        // ربط/تحديث التصنيفات بدون تكرار
+        $request->user()->categories()->sync($request->category_ids);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User preferences updated successfully.',
         ], 200);
     }
 }
