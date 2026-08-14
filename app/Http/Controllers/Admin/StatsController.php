@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\User;
 use App\Models\Book;
@@ -98,11 +99,13 @@ class StatsController extends Controller
             $date = Carbon::now()->subDays($i)->format('Y-m-d');
             $dayData = $sales->firstWhere('date', $date);
 
+            // ✅ FIX: استخدام optional() لتفادي "Attempt to read property on null"
+            //    عند عدم وجود مبيعات في يوم معيّن (firstWhere يُرجع null).
             $chartData[] = [
-                'date' => $date,
-                'label' => Carbon::parse($date)->translatedFormat('j M'),
-                'sales' => (float) ($dayData->sales ?? 0),
-                'orders' => (int) ($dayData->orders_count ?? 0),
+                'date'   => $date,
+                'label'  => Carbon::parse($date)->translatedFormat('j M'),
+                'sales'  => (float) (optional($dayData)->sales ?? 0),
+                'orders' => (int) (optional($dayData)->orders_count ?? 0),
             ];
         }
 
@@ -120,25 +123,29 @@ class StatsController extends Controller
     {
         $limit = min((int) $request->query('limit', 5), 50);
 
+        // ✅ FIX: استخدام withAvg + withCount بدلاً من استدعاء ratings()->avg() لكل كتاب
+        //    (تجنّب N+1 query problem + تجنّب lazy loading في وضع strict)
         $topBooks = Book::withSum(['orderItems' => function ($q) {
                             $q->whereHas('order', fn($o) => $o->where('status', 'paid'));
                         }], 'price')
                         ->withCount(['orderItems' => function ($q) {
                             $q->whereHas('order', fn($o) => $o->where('status', 'paid'));
                         }])
+                        ->withAvg('ratings', 'stars')
+                        ->withCount('ratings')
                         ->having('order_items_count', '>', 0)
                         ->orderByDesc('order_items_count')
                         ->take($limit)
                         ->get();
 
         $result = $topBooks->map(fn($book) => [
-            'id' => $book->id,
-            'title' => $book->title,
-            'image_url' => $book->image ? asset('storage/' . $book->image) : null,
-            'sales_count' => $book->order_items_count,
-            'revenue' => (float) $book->order_items_sum_price,
-            'ratings_avg' => round($book->ratings()->avg('stars') ?? 0, 2),
-            'ratings_count' => $book->ratings()->count(),
+            'id'            => $book->id,
+            'title'         => $book->title,
+            'image_url'     => $book->image ? asset('storage/' . $book->image) : null,
+            'sales_count'   => $book->order_items_count,
+            'revenue'       => (float) $book->order_items_sum_price,
+            'ratings_avg'   => round($book->ratings_avg_rating ?? 0, 2),
+            'ratings_count' => $book->ratings_count ?? 0,
         ]);
 
         return response()->json([
@@ -150,24 +157,27 @@ class StatsController extends Controller
     /**
      * GET /api/admin/orders/recent?limit=5
      * أحدث الطلبات للـ Dashboard
+     *
+     * ✅ تم الإصلاح: استخدام OrderResource بدل إرجاع نماذج Eloquent خامًا،
+     *    للحصول على شكل JSON موحّد وآمن في كل الـ Dashboard.
      */
     public function recentOrders(Request $request)
     {
         $limit = min((int) $request->query('limit', 5), 50);
 
-        $orders = Order::with(['user:id,name,email', 'items.book:id,title,image'])
+        $orders = Order::with(['user:id,name,email', 'items.book:id,title,image', 'payment'])
             ->latest()
             ->take($limit)
             ->get();
 
         return response()->json([
             'success' => true,
-            'data' => $orders,
+            'data' => OrderResource::collection($orders),
         ], 200);
     }
 
     /**
-     * GET /api/admin/stats/top-books-analytics
+     * GET /api/admin/stats/analytics
      * إحصائيات إضافية (متوسط التقييم، توزيع الطلبات حسب الحالة)
      */
     public function analytics()

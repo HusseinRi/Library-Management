@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\StatsController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\BookController;
 use App\Http\Controllers\AuthorController;
@@ -25,8 +26,8 @@ use Illuminate\Support\Facades\Route;
 | 1. مسارات المصادقة العامة (Public Auth Routes)
 |--------------------------------------------------------------------------
 */
+Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
 Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/verify-reset-otp', [AuthController::class, 'verifyResetOtp']);
@@ -100,6 +101,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('categories', CategoryController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('authors', AuthorController::class)->only(['store', 'update', 'destroy']);
 
+        // ===== معاينة/تحميل ملف كتاب (بدون شرط الملكية — للآدمن فقط) =====
+        // ✅ UC-ADMIN: تُستخدم بياناته عبر BookResource::pdf_url
+        Route::get('/admin/books/{book_id}/file', [BookFileController::class, 'adminDownload'])
+            ->name('admin.books.file');
+
+        // ===== إدارة المستخدمين (UC-012, UC-013) =====
         Route::get('/admin/users', [UserController::class, 'index']);
         Route::get('/admin/users/{id}', [UserController::class, 'show']);
         Route::patch('/admin/users/{id}/block', [UserController::class, 'block']);
@@ -111,6 +118,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/stats/top-books', [StatsController::class, 'topBooks']);
         Route::get('/admin/stats/analytics', [StatsController::class, 'analytics']);
         Route::get('/admin/orders/recent', [StatsController::class, 'recentOrders']);
+
+        // ===== ✅ Phase 2: إدارة الطلبات (للآدمن) =====
+        // يعرض كل الطلبات مع pagination + filters (search, status, period)
+        Route::get('/admin/orders', [AdminOrderController::class, 'index'])->name('admin.orders.index');
+        Route::get('/admin/orders/{id}', [AdminOrderController::class, 'show'])->name('admin.orders.show');
+
+        // ===== ✅ Phase 2: إدارة الطلبات (للآدمن) =====
+        // يعرض كل الطلبات مع pagination + filters (search, status, period)
+        Route::get('/admin/orders', [AdminOrderController::class, 'index'])->name('admin.orders.index');
+        Route::get('/admin/orders/{id}', [AdminOrderController::class, 'show'])->name('admin.orders.show');
 
         Route::get('/reports/sales', [ReportController::class, 'salesReport']);
     });

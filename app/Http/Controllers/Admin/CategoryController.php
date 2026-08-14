@@ -13,11 +13,18 @@ class CategoryController extends Controller
 {
     /**
      * Display a listing of the resource.
+     *
+     * ✅ تم التوحيد: تغليف الاستجابة بـ { success, data } لتطابق باقي endpoints.
      */
     public function index()
     {
-        $categories = Category::all();
-        return CategoryResource::collection($categories);
+        // ✅ Phase 2: استخدام withCount لإرجاع books_count في الاستجابة
+        $categories = Category::withCount('books')->get();
+
+        return response()->json([
+            'success' => true,
+            'data'    => CategoryResource::collection($categories),
+        ], 200);
     }
 
     /**
@@ -59,6 +66,10 @@ class CategoryController extends Controller
     public function destroy(Category $category)
     {
         $category->delete();
-        return response()->json(['message' => 'Category deleted successfully']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Category deleted successfully.',
+        ], 200);
     }
 }

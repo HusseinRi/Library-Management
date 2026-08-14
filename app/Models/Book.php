@@ -6,10 +6,11 @@ use App\Filters\AbstractFilter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Book extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'title',
@@ -36,9 +37,15 @@ class Book extends Model
         return $this->belongsToMany(Author::class, 'book_authors');
     }
 
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class, 'book_id');
+    }
+
+    /** @deprecated Use orderItems() instead */
     public function orders()
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->orderItems();
     }
 
     public function ratings()

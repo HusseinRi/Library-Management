@@ -6,7 +6,6 @@ use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
@@ -25,7 +24,7 @@ class ProfileController extends Controller
     /**
      * UC-004: تحديث البيانات الشخصية
      * PUT /api/profile
-     * body: { name, phone?, profile_photo?, preferred_language?, preferred_theme? }
+     * body: { name, profile_photo? }
      */
     public function update(Request $request)
     {
@@ -33,10 +32,7 @@ class ProfileController extends Controller
 
         $validated = $request->validate([
             'name'               => ['sometimes', 'string', 'max:255'],
-            'phone'              => ['sometimes', 'nullable', 'string', 'max:20'],
             'profile_photo'      => ['sometimes', 'nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
-            'preferred_language' => ['sometimes', 'string', Rule::in(['ar', 'en'])],
-            'preferred_theme'    => ['sometimes', 'string', Rule::in(['light', 'dark'])],
         ]);
 
         // معالجة رفع الصورة الشخصية

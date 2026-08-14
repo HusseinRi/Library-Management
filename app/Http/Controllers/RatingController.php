@@ -64,7 +64,7 @@ class RatingController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Your rating has been updated.',
-                'data' => $existingRating->fresh('user', 'book'),
+                'data' => $existingRating->fresh(['user', 'book']),
             ], 200);
         }
 
@@ -79,7 +79,7 @@ class RatingController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Rating submitted successfully.',
-            'data' => $rating->fresh('user', 'book'),
+            'data' => $rating->fresh(['user', 'book']),
         ], 201);
     }
 

@@ -11,11 +11,14 @@ class BookResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'book_title' => $this->title,
-            'isbn_number' => $this->isbn,
-            'short_description' => $this->description,
+            'title' => $this->title,
+            'isbn' => $this->isbn,
+            'description' => $this->description,
             'price' => $this->price,
-            'publish_date' => $this->publish_date,
+            'publish_date' => $this->publish_date?->format('Y-m-d'),
+
+            // ✅ Phase 2: إضافة language (كانت مفقودة في Phase 1)
+            'language' => $this->language,
             'file_type' => $this->file_type,
             'duration' => $this->duration,
 
