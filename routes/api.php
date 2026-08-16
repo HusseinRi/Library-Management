@@ -56,8 +56,12 @@ Route::get('/books/{book_id}/stream-sample', [BookFileController::class, 'stream
 Route::middleware('auth:sanctum')->group(function () {
 
     // ===== بيانات المستخدم والاهتمامات =====
+    // ===== بيانات المستخدم الشخصية =====
     Route::get('/user', function (Request $request) {
-        return $request->user();
+        return response()->json([
+            'success' => true,
+            'data' => new \App\Http\Resources\UserResource($request->user()),
+        ], 200);
     });
 
     // ✅ وضع مسار الاقتراحات هنا في الأعلى داخل الحماية وقبل apiResource الخاص بالعرض

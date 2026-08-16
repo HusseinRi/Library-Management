@@ -16,13 +16,14 @@ class UserResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'name' => $this->name,
             'username' => $this->name,
             'email' => $this->email,
             'role' => $this->role,
+            'status' => $this->status,
             'profile_url' => $this->profile_photo
                 ? asset('storage/' . $this->profile_photo)
                 : null,
-
         ];
     }
 }
