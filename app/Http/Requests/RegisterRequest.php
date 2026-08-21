@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class RegisterRequest extends FormRequest
 {
@@ -22,9 +23,14 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-
             'name' => 'required|string|max:30',
-            'email' => 'required|email|max:255|unique:users,email',
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                // يمنع البريد فقط إذا كان هناك حساب مفعّل بنفس البريد
+                Rule::unique('users', 'email')->whereNotNull('email_verified_at'),
+            ],
             'password' => 'required|string|min:8|confirmed',
             'profile_photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'role' => 'nullable|in:user,admin',

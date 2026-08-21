@@ -15,7 +15,7 @@ class BookResource extends JsonResource
             'isbn' => $this->isbn,
             'description' => $this->description,
             'price' => $this->price,
-            'publish_date' => $this->publish_date?->format('Y-m-d'),
+            'publish_date' => $this->publish_date ? \Carbon\Carbon::parse($this->publish_date)->format('Y-m-d') : null,
 
             // ✅ Phase 2: إضافة language (كانت مفقودة في Phase 1)
             'language' => $this->language,

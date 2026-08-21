@@ -9,6 +9,7 @@ use App\Http\Resources\BookResource;
 use App\Models\Book;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class BookController extends Controller
 {
@@ -228,48 +229,57 @@ class BookController extends Controller
     public function recommendations(Request $request)
     {
         $user = $request->user();
-        $perPage = min((int) $request->query('per_page', 15), 50);
 
-        // 1. الكتب المشتراة (لاستبعادها من العرض)
-        $purchasedBookIds = $user->myBooks()->pluck('book_id');
+        // 1. جلب تصنيفات التفضيلات الأولية
+        $preferredCategoryIds = $user->categories()->pluck('categories.id')->toArray();
 
-        // 2. تجميع التصنيفات المستهدفة (المفضلة + المشتريات + قائمة المفضلة)
-        $preferredCatIds = $user->categories()->pluck('categories.id');
-
-        $purchasedCatIds = \App\Models\Category::whereHas('books.myBooks', function ($q) use ($user) {
-            $q->where('user_id', $user->id);
-        })->pluck('id');
-
-        $favoriteCatIds = \App\Models\Category::whereHas('books.favorites', function ($q) use ($user) {
-            $q->where('user_id', $user->id);
-        })->pluck('id');
-
-        $targetCategoryIds = $preferredCatIds
-            ->merge($purchasedCatIds)
-            ->merge($favoriteCatIds)
-            ->unique()
-            ->values()
+        // 2. جلب تصنيفات الكتب المشتراة
+        $purchasedCategoryIds = DB::table('book_categories')
+            ->join('order_items', 'book_categories.book_id', '=', 'order_items.book_id')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->where('orders.user_id', $user->id)
+            ->pluck('book_categories.category_id')
             ->toArray();
 
-        // 3. بناء الاستعلام مع ترتيب ذكي (الكتب المقترحة أولاً ثم البقية)
+        // 3. جلب تصنيفات كتب المفضلة
+        $favoriteCategoryIds = DB::table('book_categories')
+            ->join('favorites', 'book_categories.book_id', '=', 'favorites.book_id')
+            ->where('favorites.user_id', $user->id)
+            ->pluck('book_categories.category_id')
+            ->toArray();
+
+        // دمج كافة التصنيفات وحذف التكرار
+        $targetCategoryIds = array_unique(array_merge(
+            $preferredCategoryIds,
+            $purchasedCategoryIds,
+            $favoriteCategoryIds
+        ));
+
+        // 4. جلب معرفات (IDs) الكتب المشتراة لاستبعادها تماماً من النتيجة
+        $purchasedBookIds = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->where('orders.user_id', $user->id)
+            ->pluck('order_items.book_id')
+            ->toArray();
+
         $query = Book::with(['categories', 'authors'])
-            ->whereNotIn('id', $purchasedBookIds);
+            ->whereNotIn('id', $purchasedBookIds); // استبعاد الكتب المشتراة
 
         if (!empty($targetCategoryIds)) {
-            // حقل وهمي (is_recommended) يأخذ 1 إذا كان الكتاب ينتمي للتصنيفات المفضلة و0 إذا لم ينتمِ
             $placeholders = implode(',', array_fill(0, count($targetCategoryIds), '?'));
 
-            $query->selectRaw('books.*, EXISTS (
-            SELECT 1 FROM book_categories 
-            WHERE book_categories.book_id = books.id 
-            AND book_categories.category_id IN (' . $placeholders . ')
-        ) as is_recommended', $targetCategoryIds)
-                ->orderByDesc('is_recommended');
+            $query->select('books.*')
+                ->selectRaw('EXISTS (
+                SELECT 1 FROM book_categories 
+                WHERE book_categories.book_id = books.id 
+                AND book_categories.category_id IN (' . $placeholders . ')
+            ) as is_recommended', $targetCategoryIds)
+                ->orderByDesc('is_recommended')
+                ->orderByDesc('books.id');
+        } else {
+            $query->latest();
         }
 
-        // الترتيب الثانوي بحسب الأحدث للكتب المتبقية
-        $books = $query->latest('books.created_at')->paginate($perPage);
-
-        return BookResource::collection($books);
+        return BookResource::collection($query->paginate(15));
     }
 }
