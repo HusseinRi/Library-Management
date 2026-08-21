@@ -23,8 +23,15 @@ class Book extends Model
         'audio_path',
         'audio_sample_path',
         'duration',
-        'language',      // ✅ أضيف لتفادي مشكلة Mass Assignment
-        'file_type',     // ✅ أضيف لتفادي مشكلة Mass Assignment
+        'language',
+        'file_type',
+    ];
+
+    /**
+     * تحويل الحقول تلقائياً إلى أنواعها البرمجية المناسبة
+     */
+    protected $casts = [
+        'publish_date' => 'date',
     ];
 
     public function categories()
@@ -67,10 +74,9 @@ class Book extends Model
     {
         return $this->hasMany(ReadingProgress::class);
     }
+
     public function scopeFilter(Builder $builder, AbstractFilter $filter): Builder
     {
-        // نقوم بتمرير الـ Builder الحالي إلى كلاس الفلترة ليقوم بتركيب شروط الـ SQL ديناميكياً
         return $filter->apply($builder);
     }
-
 }

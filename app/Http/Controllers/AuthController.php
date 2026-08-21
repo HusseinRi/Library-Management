@@ -18,7 +18,7 @@ class AuthController extends Controller
 {
     public function register(RegisterRequest $request)
     {
-        // 1. معالجة وتخزين الصورة الشخصية
+        // 1. معالجة وتخزين الصورة الشخصية (إن وجدت)
         $profilePhoto = $request->hasFile('profile_photo')
             ? $request->file('profile_photo')->store('profile_photos', 'public')
             : null;
@@ -26,21 +26,38 @@ class AuthController extends Controller
         // 2. توليد رمز OTP عشوائي من 6 أرقام
         $otp = rand(100000, 999999);
 
-        // 3. إنشاء المستخدم وحفظ حقول الـ OTP مباشرة
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role ?? 'user',
-            'profile_photo' => $profilePhoto,
-            'otp_code' => $otp,
-            'otp_expires_at' => now()->addMinutes(10),
-        ]);
+        // 3. البحث عن مستخدم موجود غير مفعّل، أو إنشاء مستخدم جديد
+        $user = User::where('email', $request->email)->first();
 
-        // 🔥 4. إرسال الإيميل الحقيقي باستخدام صفحة الـ Blade المنسقة
+        if ($user) {
+            // تحديث بيانات المستخدم الذي لم يفعّل حسابه بعد
+            $user->name = $request->name;
+            $user->password = Hash::make($request->password);
+            $user->role = $request->role ?? 'user';
+            if ($profilePhoto) {
+                $user->profile_photo = $profilePhoto;
+            }
+            $user->otp_code = $otp;
+            $user->otp_expires_at = now()->addMinutes(10);
+            $user->save();
+        } else {
+            // إنشاء مستخدم جديد بحالة غير مفعلة
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => $request->role ?? 'user',
+                'profile_photo' => $profilePhoto,
+                'otp_code' => $otp,
+                'otp_expires_at' => now()->addMinutes(10),
+                'email_verified_at' => null,
+            ]);
+        }
+
+        // 4. إرسال الإيميل الحقيقي
         Mail::to($user->email)->send(new SendOtpMail($otp));
 
-        // 5. إرجاع الرد للفرونت إيند بدون توكن دخول (لحين تفعيل الحساب)
+        // 5. إرجاع الرد للفرونت إيند
         return response()->json([
             'message' => 'Registration successful. Please check your email for the OTP verification code.',
             'user' => new UserResource($user),
